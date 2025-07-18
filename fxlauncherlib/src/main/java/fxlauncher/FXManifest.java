@@ -15,8 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static whole.Strings.ensureEndingSlash;
-
+import static fxlauncher.Strings.ensureEndingSlash;
 
 @XmlRootElement(name = "Application")
 public class FXManifest {

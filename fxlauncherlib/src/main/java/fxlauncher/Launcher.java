@@ -1,6 +1,5 @@
 package fxlauncher;
 
-import com.sun.javafx.application.PlatformImpl;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -247,7 +246,6 @@ public class Launcher extends Application {
 				appparams.getUnnamed().addAll(params.getUnnamed());
 			}
 
-			PlatformImpl.setApplicationName(app.getClass());
 			superLauncher.setPhase(Constants.getString("Application.Phase.Init"));
 			app.start(primaryStage);
 		} else {
