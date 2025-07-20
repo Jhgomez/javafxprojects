@@ -198,7 +198,7 @@ public abstract class AbstractLauncher<APP> {
 			URI uri = URI.create(uriStr);
 
 			// load manifest from --app param if supplied, else default file at supplied uri
-			URI app = (appStr != null) ? URI.create(appStr) : URI.create(uriStr + "app.xml"); // We avoid using
+			URI app = (appStr != null) ? URI.create(appStr) : URI.create(uriStr + "myapp.xml"); // We avoid using
 																								// uri.resolve() here so
 																								// as to not break UNC
 																								// paths. See issue #143
@@ -214,7 +214,7 @@ public abstract class AbstractLauncher<APP> {
 			return;
 		}
 
-		URL embeddedManifest = AbstractLauncher.class.getResource("/app.xml");
+		URL embeddedManifest = AbstractLauncher.class.getResource("/myapp.xml");
 		manifest = JAXB.unmarshal(embeddedManifest, FXManifest.class);
 
 		Path cacheDir = manifest.resolveCacheDir(namedParams);

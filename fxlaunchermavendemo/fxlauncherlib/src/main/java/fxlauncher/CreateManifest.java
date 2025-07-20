@@ -150,7 +150,11 @@ public class CreateManifest {
             System.out.println("Warning: --stopOnUpdateErrors is deprecated. "
                     + "Use --stop-on-update-errors instead.");
         }
-        JAXB.marshal(manifest, appPath.resolve("app.xml").toFile());
+        JAXB.marshal(manifest, appPath.resolve("myapp.xml").toFile());
+    }
+
+    public String echas() {
+        return "Ivannita mi bebe";
     }
 
     public static FXManifest create(URI baseURI, String launchClass, Path appPath) throws IOException, URISyntaxException {

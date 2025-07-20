@@ -104,7 +104,7 @@ public class Launcher extends Application {
 		// We might be called even when FXLauncher wasn't used to start the application
 		if (AbstractLauncher.manifest == null)
 			return null;
-		FXManifest manifest = FXManifest.load(URI.create(AbstractLauncher.manifest.uri + "/app.xml"));
+		FXManifest manifest = FXManifest.load(URI.create(AbstractLauncher.manifest.uri + "/myapp.xml"));
 		return manifest.equals(AbstractLauncher.manifest) ? null : manifest;
 	}
 
@@ -210,9 +210,9 @@ public class Launcher extends Application {
 		alert.showAndWait();
 	}
 
-//	public static void main(String[] args) {
-//		launch(args);
-//	}
+	public static void main(String[] args) {
+		launch(args);
+	}
 
 	private void createUpdateWrapper() {
 		superLauncher.setPhase(Constants.getString("Application.Phase.Wrapper"));
