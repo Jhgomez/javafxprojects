@@ -21,7 +21,7 @@
     <app.filename>FxlDemo</app.filename>
 
     <!-- The JavaFX Application class name -->
-    <app.mainClass>no.tornado.FxlDemo</app.mainClass>
+    <app.mainClass>fxlauncher.front/fxlauncher.front.HelloApplication</app.mainClass>
 
     <!-- Optional override to specify where the cached files are stored. Default is current working directory -->
     <app.cacheDir>USERLIB/FxlDemo</app.cacheDir>
@@ -33,7 +33,7 @@
     <app.vendor>Acme Inc</app.vendor>
 
     <!-- Base URL where you will host the application artifacts -->
-    <app.url>http://fxldemo.tornado.no/</app.url>
+    <app.url>192.168.1.5</app.url>
 
     <!-- Optional scp target for application artifacts hosted at the above url -->
     <app.deploy.target>w48839@fxldemo.tornado.no:fxldemo</app.deploy.target>
@@ -60,7 +60,6 @@
 
   <build>
     <plugins>
-
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
@@ -70,7 +69,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>fxlauncher.front/fxlauncher.front.HelloApplication</mainClass>
+              <mainClass>${app.mainClass}</mainClass>
               <launcher>myapp</launcher>
               <jlinkZipName>myimage</jlinkZipName>
               <jlinkImageName>imagezip</jlinkImageName>
@@ -82,6 +81,84 @@
         </executions>
       </plugin>
 
+      <!-- Copy dependencies to appdir, this was in the original example
+      however this might not be needed anymore due to how javafx-maven-plugin works, it includes all
+      platform and library dependencies in the custom JRE that it creates
+       -->
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-dependency-plugin</artifactId>-->
+<!--        <version>3.8.1</version>-->
+<!--        <configuration>-->
+<!--          <excludeScope>provided</excludeScope>-->
+<!--          <outputDirectory>${app.dir}</outputDirectory>-->
+<!--          <stripVersion>true</stripVersion>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>copy-dependencies</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
+
+      <!-- since this plugin is in parent pom we don't need to declare its version. this will output the jar file of this module to the specified directory -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <outputDirectory>${app.dir}</outputDirectory>
+        </configuration>
+      </plugin>
+
+      <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>3.5.1</version>
+      <!-- Generate app.xml manifest -->
+      <executions>
+      <execution>
+        <id>create-manifest</id>
+        <phase>package</phase>
+        <goals>
+          <goal>java</goal>
+        </goals>
+        <configuration>
+          <mainClass>fxlauncher.CreateManifest</mainClass>
+          <arguments>
+            <argument>${app.url}</argument>
+            <argument>${app.mainClass}</argument>
+            <argument>${app.dir}</argument>
+            <argument>--cache-dir=${app.cacheDir}</argument>
+            <argument>--accept-downgrade=${app.acceptDowngrade}</argument>
+            <argument>--include-extensions=jpg</argument>
+            <argument>${app.parameters}</argument>
+          </arguments>
+        </configuration>
+      </execution>
+
+        <execution>
+          <id>embed-manifest-in-launcher</id>
+          <phase>package</phase>
+          <goals>
+            <goal>exec</goal>
+          </goals>
+          <configuration>
+            <executable>jar</executable>
+            <workingDirectory>${app.dir}</workingDirectory>
+            <arguments>
+              <argument>uf</argument>
+              <argument>../../../fxlauncherlib/target/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
+              <argument>myapp.xml</argument>
+            </arguments>
+          </configuration>
+        </execution>
+
+
+      </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
