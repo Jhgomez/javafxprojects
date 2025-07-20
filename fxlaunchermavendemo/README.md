@@ -91,7 +91,7 @@ curl http://192.168.1.16:9090/hello
 
 4. You can test they're connected using ping command, from a terminal just execute command `ping <ip_address_of_computer_you_want_to_check_connection_with>`, you can ping it by name also, find the name with commands like `sudo nmap -sn 192.168.1.*` or `nslookup 192.168.1.16`, they will give you the name, at least on Linux these commands work, you can even just run `hostname` command in terminal in Linux and copy that name to ping, once you have the name just use the name instead of the IP address. In my setup the host is Windows 11 and the VM is latest Linux mint
 
-## Set up an SSH Server on both, host and vm(https://www.geeksforgeeks.org/linux-unix/ssh-command-in-linux-with-examples/)
+## [Set up an SSH Server on both, host and vm](https://www.geeksforgeeks.org/linux-unix/ssh-command-in-linux-with-examples/)
 It is made differenctly in Windows and linux
 
 1. First lets do this in the linux vm terminal run `sudo apt install openssh-client openssh-server`
@@ -109,13 +109,49 @@ Get-WindowsCapability -Online |
   Add-WindowsCapability –Online	
 ```
 
-6. If for any reason this is not completely downloaded(like in my case), You can just search for "optional features" in windows search, then for ssh server in "view feature", I still got error, but checked the optional features history and found error "error 0x800F0820" which could be some corrupted files so from command line whit admin privileges I executed `sfc /scannow` and `DISM.exe /Online /Cleanup-image /Restorehealth` but you should execute `DISM.exe /Online /Cleanup-image /Restorehealth` and then `sfc /scannow` and reboot the pc, I was able to do it from the optional features screen
+6. If for any reason this is not completely downloaded(like in my case), You can just search for "optional features" in windows search, then for ssh server in "view feature", I still got error, but checked the optional features history and found error "error 0x800F0820" which could be some corrupted files so from command prompt with admin privileges I executed `sfc /scannow` and `DISM.exe /Online /Cleanup-image /Restorehealth` but you should execute `DISM.exe /Online /Cleanup-image /Restorehealth` first and then `sfc /scannow` and reboot the pc, after the corrupted files produced in my previous attempts, I was able to do set upt ssh from the optional features screen
 
 7. Run these commands `Start-Service sshd` and `Start-Service ssh-agent` in an powershell with admin privileges, note that I didn't set upd these service to start automatically because I don't need them to do that but you can do it with `Set-Service -Name <service_name> -StartupType 'Automatic'`
 
 8. You can connect now from the Linux VM by executing this command `ssh "Juan Enrique@192.168.1.5"` on a terminal, your password is your outlook account password if you're logged in to an outlook account or the computer password, either or
 
-9. You should enter the password, if it fails stop the services with the same command but replace `Start` with `Stop`, open a Notepad instance as an Administrator by rightclicking over the icon and open the file with the address `Programdata%sshsshd_config`, edit `MaxAuthTries` to a greater number.
+9. You should enter the password, if it fails with a "Too many authentication failures" stop the services with the same command but replace `Start` with `Stop`, open a Notepad instance as an Administrator by rightclicking over the icon and open the file with the address `Programdata%sshsshd_config`, edit `MaxAuthTries` to a greater number.
 
 At this point we should have everything we need to test FXLauncher, you have the source code in the repo.
+
+## Setting up FXLauncher
+
+./mvnw clean                        deletes the target folder that is generated with install or package lifecycle phases
+./mvnw install or ./mvnw package    generates the target file in each maven module also the jar file, in this case our main jar is the located in the front module target directory `front/target/front-1.0-SNAPSHOT.jar` 
+./mvnw -pl front javafx:run         runs the app without building, always run either install or pacage before this goal so that the jar the front module depends on(fxlauncherlib's jar) is created
+
+You can run them these two at once
+./mvnw clean install
+or
+./mvnw clean package
+
+Use Jlink to build a custom JRE with only the modules declared in your module-info.java files, reducing the size of the JRE by excluding other JRE APIs that you don't need, maybe its similar to how in Python it is adviced to create a venv for diferent projects in which you can have different libraries/versions installed in each:
+./mvnw -pl front clean package javafx:jlink
+
+Run the App with the command from a git bash(unix like shell), this command uses the custom image created with the JDK utility called jlink located at `front/target/imagezip/bin/java`, declares the module `front/target/front-1.0-SNAPSHOT.jar` and indicates the main class(using the package it lives under) in the module, `fxlauncher.front/fxlauncher.front.HelloApplication`:
+front/target/imagezip/bin/java --module-path front/target/front-1.0-SNAPSHOT.jar -m fxlauncher.front/fxlauncher.front.HelloApplication
+
+If we were not using the Jlink generated custom JRE image we would have to indicate however is running the app what dependencies they need and they would have to download, for example, the JavaFx jar files, most likely other dependencies also and run a command like the following:
+```
+java \
+  --module-path front/target/front-1.0-SNAPSHOT.jar:fxlauncherlib/target/fxlauncherlib-1.0-SNAPSHOT.jar:/path/to/javafx-sdk/lib \
+  --add-modules javafx.controls,javafx.fxml \
+  -m fxlauncher.front
+```
+
+In there the `java` is used from the JDK or JRE you have installed and the `/bin` folder in this JDK/JRE, should be in your `PATH`'s env variable so you can invoke it
+
+Note that the original fxlauncher library source code used this package for reflection `import javax.xml.bind.JAXB`, that is not par of the JDK any more and later moved to this artifact `javax.xml.bind:jaxb-api:2.3.1` which I was using but found out that this JAR is not using a module-info.java file, meaning is not modular, and the jlink plugin was giving me the error `Error: automatic module cannot be used with jlink: java.activation from file:///C:/Users/Juan%20Enrique/.m2/repository/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar` which was caused because jlink only knows how to build a runtime image from explicit modules (and the built‑in JDK modules). It will refuse to include an automatic module in the custom image.
+
+* Explicit modules are JARs (or JMODs) that contain a module-info.class.
+* Automatic modules are plain JARs on the module path that get an auto‑generated name (via Automatic-Module-Name or the file name).
+
+This was solved by using an implementation of that library that produces an explicit module, in this case `org.glassfish.jaxb:jaxb-runtime:2.3.3`. also remember you have to declare you need the module with `requires org.glassfish.jaxb.runtime;`
+
+Some other solution would have been using a plugin like [moditect](https://github.com/moditect/moditect) to generate module-info for the module and inject it in your existing JAR. This may involve you running command like `jar uf ArtifactToModify.jar module-info.java`, `jar` is a JDK utility that lives in the bin directoy of the JDK installation, `uf` is to modify and indicate the file we want to modify, if doing it directly from a terminal you'd have to locate the jar file inside the `~/.m2` directory, here is where maven caches library's artifacts and the rest of the command you'd have to figure it out how to put the module inside the right location in the jar, remember a jar is pretty much a zip file, it conatins all the files the java program, compiled from its source code, needs to run. Other options is using the plugin `org.codehaus.mojo:exec-maven-plugin` wich lets you either execute a command like a if running from a command like during a maven phase of the build process which you can specify, an example is in the pom files of this project 
 
