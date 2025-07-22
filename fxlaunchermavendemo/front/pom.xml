@@ -33,10 +33,10 @@
     <app.vendor>Acme Inc</app.vendor>
 
     <!-- Base URL where you will host the application artifacts -->
-    <app.url>192.168.1.5</app.url>
+    <app.url>http://192.168.1.16</app.url>
 
     <!-- Optional scp target for application artifacts hosted at the above url -->
-    <app.deploy.target>w48839@fxldemo.tornado.no:fxldemo</app.deploy.target>
+    <app.deploy.target>juan@192.168.1.16</app.deploy.target>
 
     <!-- The app and launcher will be assembled in this folder -->
     <app.dir>${project.build.directory}/app</app.dir>
@@ -69,7 +69,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>${app.mainClass}</mainClass>
+              <mainClass>fxlauncher.Launcher</mainClass>
               <launcher>myapp</launcher>
               <jlinkZipName>myimage</jlinkZipName>
               <jlinkImageName>imagezip</jlinkImageName>
@@ -107,7 +107,7 @@
       <!-- since this plugin is in parent pom we don't need to declare its version. this will output the jar file of this module to the specified directory -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
+        <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <outputDirectory>${app.dir}</outputDirectory>
         </configuration>
@@ -151,11 +151,27 @@
             <arguments>
               <argument>uf</argument>
               <argument>../../../fxlauncherlib/target/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
-              <argument>myapp.xml</argument>
+              <argument>app.xml</argument>
             </arguments>
           </configuration>
         </execution>
 
+        <execution>
+          <id>embed-manifest-in-local-launcher</id>
+          <phase>package</phase>
+          <goals>
+            <goal>exec</goal>
+          </goals>
+          <configuration>
+            <executable>jar</executable>
+            <workingDirectory>${app.dir}</workingDirectory>
+            <arguments>
+              <argument>uf</argument>
+              <argument>../../../../../.m2/repository/fxlauncher/fxlauncherlib/1.0-SNAPSHOT/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
+              <argument>app.xml</argument>
+            </arguments>
+          </configuration>
+        </execution>
 
       </executions>
       </plugin>
