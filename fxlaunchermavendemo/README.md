@@ -119,22 +119,74 @@ Get-WindowsCapability -Online |
 
 At this point we should have everything we need to test FXLauncher, you have the source code in the repo.
 
-## Setting up FXLauncher
+## Installing Apache server
+We need this software to be able to retrieve the artificats(JARs) from our application. Execute each of the commands below
+```
+sudo apt update
+sudo apt install apache2 -y
+sudo systemctl enable apache2
+sudo systemctl start apache2\
+```
+```
+sudo systemctl status apache2
+sudo chmod -R 755 /var/www/html
+sudo rm /var/www/html/index.html
+sudo chown <yourUsername>:<yourUsername> -R /var/www/html
+```
 
-./mvnw clean                        deletes the target folder that is generated with install or package lifecycle phases
-./mvnw install or ./mvnw package    generates the target file in each maven module also the jar file, in this case our main jar is the located in the front module target directory `front/target/front-1.0-SNAPSHOT.jar` 
-./mvnw -pl front javafx:run         runs the app without building, always run either install or pacage before this goal so that the jar the front module depends on(fxlauncherlib's jar) is created
+## Copy files Using CP Manually
+You can add a maven execution if you want, otherwise just run the below code from the directory you have your artifacts in and from a Unix like terminal(git bash in windows), in our case it would be
+in the `target` directory of the `front` module
+```
+scp * juan@192.168.1.168:/var/www/html
+```
+
+You can access your articats from a web browser from any device that is connected to the same wifi network like just typing `192.168.1.16/<name_of_artifact>` on your browser search bar, for course you can
+make an http request using any utility like `wget`, or maybe `curl` or anything similar
+
+## Setting up FXLauncher
+After tyring to work out with this somewhat old library, I came to conclusion that it is not longer possible to use this with a modern stack, I was using OpenJDK 21, with Java modules in a [modular Maven application](https://maven.apache.org/pom.html). I was able to solve
+several configurations to adapt to this set up and got the application running however after some testing I saw that even though the jar where being loaded from a local cache directory the new implementation/changes where not being invoked, and this happens because in the original
+example the context/stack at that time was different, different tools where being used to deploy applications, JavaPackager was included in the JDK, also JavaFx modules where included but this changed at some point, theyr are not part of JDK anymore, and JavaPackager was even deprecated I think, and
+the JavaPackager actually produced a FatJar, a Jar that contains all its dependencies and loads them in the class path, and that is why it previously this library worked, but now tools like Jlink
+are used to create custom JRE images, this tool basically reduces the size of applications, it makes it easier to distribute, etc, however this is not a Fat Jar being produced and also it works with Java Modules to avoid including unnecessary libraries in the custom JRE image that it produces,
+Is usually used alongisde with Jpackage to produce native applications like executables and msi installers in windows, .deb files in linux, etc, Jlink produces an static image, is basically frozen once it is put together, you would have to rebuild it to get updates to your users. Jpackage alone could
+help you produce a similar Fat Jar file but you have to make it manually at least I don't know of a plugin that can help me with this right now, this is because Jpackage has two modes, one is for modular(java modules), you declare the modules
+```
+jpackage \
+  --type app-image \
+  --module-path mods \
+  --add-modules com.example.app \
+  --module com.example.app/com.example.app.Main
+```
+The above code invokes Jlink under the covers. The other mode is a classpath approach(non-modular), this is how it was done before modules came out as an alternative
+```
+jpackage \
+  --type app-image \
+  --input myapp-dir \
+  --main-jar app.jar \
+  --main-class com.example.Main
+```
+
+I'm not goint to explore this solution, we can leave it as a todo
+
+## Clean, Build, Run the aplication
+These are the commands I used to run the app
+
+./mvnw clean                        deletes the `target` folder of each module that is generated with `install` or `package` lifecycle phases
+./mvnw install    compiles all java code/classes in all modules, meaning it generates a jar file in `target` directory, in this case our main jar is the located in the front module target directory `front/target/front-1.0-SNAPSHOT.jar` 
+./mvnw -pl front javafx:run         runs the app without building, always run either install before this goal so that the jar the front module depends on(fxlauncherlib's jar) is created
 
 You can run them these two at once
 ./mvnw clean install
-or
-./mvnw clean package
 
 Use Jlink to build a custom JRE with only the modules declared in your module-info.java files, reducing the size of the JRE by excluding other JRE APIs that you don't need, maybe its similar to how in Python it is adviced to create a venv for diferent projects in which you can have different libraries/versions installed in each:
-./mvnw -pl front clean package javafx:jlink
+./mvnw -pl front clean install javafx:jlink
+or just
+./mvnw -pl front javafx:jlink
 
-Run the App with the command from a git bash(unix like shell), this command uses the custom image created with the JDK utility called jlink located at `front/target/imagezip/bin/java`, declares the module `front/target/front-1.0-SNAPSHOT.jar` and indicates the main class(using the package it lives under) in the module, `fxlauncher.front/fxlauncher.front.HelloApplication`:
-front/target/imagezip/bin/java --module-path front/target/front-1.0-SNAPSHOT.jar -m fxlauncher.front/fxlauncher.front.HelloApplication
+After you execute this commands you can run the app without using maven with the following command from a git bash(unix like shell), this command uses the custom image created with the JDK utility called jlink located at `front/target/imagezip/bin/java`, declares the module `front/target/front-1.0-SNAPSHOT.jar` and indicates the main class(using the package it lives under) in the module, `fxlauncher.front/fxlauncher.front.HelloApplication`:
+`front/target/imagezip/bin/java --module-path front/target/front-1.0-SNAPSHOT.jar -m fxlauncher.front/fxlauncher.front.HelloApplication`
 
 If we were not using the Jlink generated custom JRE image we would have to indicate however is running the app what dependencies they need and they would have to download, for example, the JavaFx jar files, most likely other dependencies also and run a command like the following:
 ```
@@ -155,3 +207,8 @@ This was solved by using an implementation of that library that produces an expl
 
 Some other solution would have been using a plugin like [moditect](https://github.com/moditect/moditect) to generate module-info for the module and inject it in your existing JAR. This may involve you running command like `jar uf ArtifactToModify.jar module-info.java`, `jar` is a JDK utility that lives in the bin directoy of the JDK installation, `uf` is to modify and indicate the file we want to modify, if doing it directly from a terminal you'd have to locate the jar file inside the `~/.m2` directory, here is where maven caches library's artifacts and the rest of the command you'd have to figure it out how to put the module inside the right location in the jar, remember a jar is pretty much a zip file, it conatins all the files the java program, compiled from its source code, needs to run. Other options is using the plugin `org.codehaus.mojo:exec-maven-plugin` wich lets you either execute a command like a if running from a command like during a maven phase of the build process which you can specify, an example is in the pom files of this project 
 
+## Alternatives to keep your app up to date that You could explore
+In conclusion don't use this library any more in modern setups, the most realistic approach is just stick with new something "more simple", use jlink and jpakage to produce an native executable/native app and then you can implement a service on the internet that your app
+can check with to see if there is any new version and let the customer know the can go ahead and download it, with jpackage you can manage versions and install a new version on top of an old version.
+
+The other libraries are 
