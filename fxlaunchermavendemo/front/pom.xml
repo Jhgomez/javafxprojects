@@ -20,9 +20,6 @@
     <!-- Installer Filename without suffix -->
     <app.filename>FxlDemo</app.filename>
 
-    <!-- The JavaFX Application class name -->
-    <app.mainClass>fxlauncher.front/fxlauncher.front.HelloApplication</app.mainClass>
-
     <!-- Optional override to specify where the cached files are stored. Default is current working directory -->
     <app.cacheDir>USERLIB/FxlDemo</app.cacheDir>
 
@@ -39,7 +36,7 @@
     <app.deploy.target>juan@192.168.1.16</app.deploy.target>
 
     <!-- The app and launcher will be assembled in this folder -->
-    <app.dir>${project.build.directory}/app</app.dir>
+    <app.dir>${project.build.directory}</app.dir>
 
     <!-- Native installers will be built in this folder -->
     <app.installerdir>${project.build.directory}/installer</app.installerdir>
@@ -69,7 +66,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>fxlauncher.Launcher</mainClass>
+              <mainClass>fxlauncher.front/fxlauncher.front.HelloApplication</mainClass>
               <launcher>myapp</launcher>
               <jlinkZipName>myimage</jlinkZipName>
               <jlinkImageName>imagezip</jlinkImageName>
@@ -81,37 +78,41 @@
         </executions>
       </plugin>
 
-      <!-- Copy dependencies to appdir, this was in the original example
-      however this might not be needed anymore due to how javafx-maven-plugin works, it includes all
-      platform and library dependencies in the custom JRE that it creates
+      <!-- Copy dependencies to appdir, this was in the original example, in the original example a FAT jar was created
+      using JavaPackager but that approach is not the same as the new tools like Jlink and JPackage which are what we use
+      to deploy our JavaFx apps nowadays, there is possibility to reproduce a fat jar behavior using JPackage alone but the
+      plugins that exists might not allow you to do that so it'd have to be done manually. Using the configuration below
+      was important to implementation of the original solution, this would allows us to copy all the depencies jars into our
+      target folder so we can then push them into our server and also pack them using Jpackager, again this produces basically
+      a Fat Jar which is plain old classpath launching and that is why an URLClassLoader was sufficient to load jar dinamically
        -->
-<!--      <plugin>-->
-<!--        <groupId>org.apache.maven.plugins</groupId>-->
-<!--        <artifactId>maven-dependency-plugin</artifactId>-->
-<!--        <version>3.8.1</version>-->
-<!--        <configuration>-->
-<!--          <excludeScope>provided</excludeScope>-->
-<!--          <outputDirectory>${app.dir}</outputDirectory>-->
-<!--          <stripVersion>true</stripVersion>-->
-<!--        </configuration>-->
-<!--        <executions>-->
-<!--          <execution>-->
-<!--            <phase>package</phase>-->
-<!--            <goals>-->
-<!--              <goal>copy-dependencies</goal>-->
-<!--            </goals>-->
-<!--          </execution>-->
-<!--        </executions>-->
-<!--      </plugin>-->
-
-      <!-- since this plugin is in parent pom we don't need to declare its version. this will output the jar file of this module to the specified directory -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.8.1</version>
         <configuration>
+          <excludeScope>provided</excludeScope>
           <outputDirectory>${app.dir}</outputDirectory>
+          <stripVersion>true</stripVersion>
         </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
+
+      <!-- since this plugin is in parent pom we don't need to declare its version. this will output the jar file of this module to the specified directory -->
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-compiler-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <outputDirectory>${app.dir}</outputDirectory>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
 
       <plugin>
       <groupId>org.codehaus.mojo</groupId>
@@ -129,7 +130,7 @@
           <mainClass>fxlauncher.CreateManifest</mainClass>
           <arguments>
             <argument>${app.url}</argument>
-            <argument>${app.mainClass}</argument>
+            <argument>fxlauncher.front.HelloApplication</argument>
             <argument>${app.dir}</argument>
             <argument>--cache-dir=${app.cacheDir}</argument>
             <argument>--accept-downgrade=${app.acceptDowngrade}</argument>
@@ -150,7 +151,7 @@
             <workingDirectory>${app.dir}</workingDirectory>
             <arguments>
               <argument>uf</argument>
-              <argument>../../../fxlauncherlib/target/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
+              <argument>../../fxlauncherlib/target/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
               <argument>app.xml</argument>
             </arguments>
           </configuration>
@@ -167,7 +168,7 @@
             <workingDirectory>${app.dir}</workingDirectory>
             <arguments>
               <argument>uf</argument>
-              <argument>../../../../../.m2/repository/fxlauncher/fxlauncherlib/1.0-SNAPSHOT/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
+              <argument>../../../../.m2/repository/fxlauncher/fxlauncherlib/1.0-SNAPSHOT/fxlauncherlib-1.0-SNAPSHOT.jar</argument>
               <argument>app.xml</argument>
             </arguments>
           </configuration>
