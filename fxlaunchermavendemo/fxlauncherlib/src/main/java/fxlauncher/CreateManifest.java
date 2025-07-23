@@ -168,7 +168,7 @@ public class CreateManifest {
         }
         Files.walkFileTree(appPath, new SimpleFileVisitor<Path>() {
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (!Files.isDirectory(file) && shouldIncludeInManifest(file) && !file.getFileName().toString().startsWith("fxlauncher"))
+                if (!Files.isDirectory(file) && shouldIncludeInManifest(file) && !file.getFileName().toString().startsWith("fxlauncherlib"))
                     manifest.files.add(new LibraryFile(appPath, file));
                 return FileVisitResult.CONTINUE;
             }
