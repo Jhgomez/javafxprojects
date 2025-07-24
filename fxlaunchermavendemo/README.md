@@ -168,7 +168,24 @@ jpackage \
   --main-class com.example.Main
 ```
 
-I'm not goint to explore this solution, we can leave it as a todo
+I'm not going to explore this solution, we can leave it as a todo. Also see [this article](https://www.cgjennings.ca/articles/java-9-dynamic-jar-loading/) where you can see that the 
+usage that this API as many other where giving to URLClassLoader API it mentions that although this was never documented 
+as a fact, it was a reasonable assumption since that’s the class loader that knows how to deal with JAR files. But then 
+came Project Jigsaw, the module system introduced with Java 9. With it came a whole new hierarchy of class loaders that
+broke any app that assumed a URLClassLoader system class loader. This article also provides other alternatives 
+
+1. Stick with Java 8 indefinitely. This is a serious option: there are multiple vendors offering free long-term support 
+builds of OpenJDK 8 and most desktop Java apps these days bundle their own JRE.
+2. Write your own class loader. There are a few approaches here, such as setting the system class loader with a 
+`-Djava.system.class.loader=MyClassLoader` option, or installing one at startup before loading your main class. You can 
+also write a separate class loader just for loading things dynamically. This can actually be an improvement because you 
+may gain the ability to GC a plug-in once it is no longer needed, or replace/upgrade plug-ins at runtime. Depending on 
+the assumptions of the existing code, this can be a smooth transition or it can introduce any number of errors.
+3. Switch to something like OSGi for loading components at run time. This is a great option when starting a new project,
+but if you have already been using addURL it can be difficult to switch. (Again, it depends on the assumptions of your existing code.)
+4. Use an agent to extend the system class path in an officially supported manner. Yeah, that’s right. There has been
+an official way to do this since Java 6, buried under the obscure java.lang.instrument package. The best part is that 
+this method is practically identical to what you were doing before and generally requires little change to your existing code base.
 
 ## Clean, Build, Run the aplication
 These are the commands I used to run the app
@@ -208,7 +225,22 @@ This was solved by using an implementation of that library that produces an expl
 Some other solution would have been using a plugin like [moditect](https://github.com/moditect/moditect) to generate module-info for the module and inject it in your existing JAR. This may involve you running command like `jar uf ArtifactToModify.jar module-info.java`, `jar` is a JDK utility that lives in the bin directoy of the JDK installation, `uf` is to modify and indicate the file we want to modify, if doing it directly from a terminal you'd have to locate the jar file inside the `~/.m2` directory, here is where maven caches library's artifacts and the rest of the command you'd have to figure it out how to put the module inside the right location in the jar, remember a jar is pretty much a zip file, it conatins all the files the java program, compiled from its source code, needs to run. Other options is using the plugin `org.codehaus.mojo:exec-maven-plugin` wich lets you either execute a command like a if running from a command like during a maven phase of the build process which you can specify, an example is in the pom files of this project 
 
 ## Alternatives to keep your app up to date that You could explore
-In conclusion don't use this library any more in modern setups, the most realistic approach is just stick with new something "more simple", use jlink and jpakage to produce an native executable/native app and then you can implement a service on the internet that your app
-can check with to see if there is any new version and let the customer know the can go ahead and download it, with jpackage you can manage versions and install a new version on top of an old version.
+In conclusion don't use this library any more in modern setups, the most realistic approach is just stick with something new and "more simple", use jlink and jpakage to produce a native executable/native app and then you can implement a service on the internet that your app
+can check with to see if there is any new version and let the customer know they can go ahead and download it, with jpackage you can manage versions and install a new version on top of an old version.
 
-The other libraries are 
+The other libraries are found [here](https://java-source.net/open-source/installer-generators) where they mention the following Open Source Installers Generators in Java: IzPack, VAInstall, Packlet, Lift Off Java Installer, Mini Installer, JSmooth, Launch4J, AntInstaller, Antigen, Java Service Wrapper, update4j
+. This info was found in this [stackoverflow question](https://stackoverflow.com/questions/4002462/how-can-i-write-a-java-application-that-can-update-itself-at-runtime)
+
+## Learning
+From all of this I learnt how java has changed over time, previously the class loaders allowed us to load classes directly from jars location but that
+changed with the module system, by the way, this new module system also introduced the `Module` API and the concept of
+"Module Layer", using it you could load the new version of a module that contains a new version of a JAR in a new module layer that is created
+on top of the current module layer but this would mean that you would have to be explicit to create any instance of the
+API that has a new implementation using the correct module layer which makes it very hard to maintain, so is not a feasible
+option in this case.
+
+### APIs
+* ServiceLoader
+* ClassLoaders
+* Module API
+* JAXB for serializing XML files to java objects
