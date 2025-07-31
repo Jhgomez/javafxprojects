@@ -31,7 +31,7 @@ application {
 
 javafx {
     version = "23"
-    modules = listOf("javafx.controls", "javafx.fxml", "javafx.media", "javafx.graphics")
+    modules = listOf("javafx.controls", "javafx.fxml")
 }
 
 jlink {
