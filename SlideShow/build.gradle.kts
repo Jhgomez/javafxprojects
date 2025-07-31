@@ -6,13 +6,11 @@ plugins {
 }
 
 group = "SlideShow"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
 }
-
-val junitVersion = "5.10.2"
 
 java {
     toolchain {
@@ -27,6 +25,15 @@ tasks.withType<JavaCompile> {
 application {
     mainModule.set("slideshow.slideshow")
     mainClass.set("slideshow.slideshow.SliderShowApplication")
+
+    applicationDefaultJvmArgs = listOf(
+        "-XX:NativeMemoryTracking=summary",
+        "-XX:+UseZGC",
+        "-Xmx400m",
+        "-Xms400m",
+        "-Xss90k",
+        "-XX:MaxGCPauseMillis=200"
+    )
 }
 
 javafx {
