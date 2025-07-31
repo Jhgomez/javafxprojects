@@ -1,0 +1,8 @@
+.idea/
+.gradle/
+build/
+out/
+python/venv
+design/src/.DS_Store
+design/.DS_Store
+.DS_Store
