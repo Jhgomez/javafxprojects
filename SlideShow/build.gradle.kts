@@ -26,7 +26,7 @@ tasks.withType<JavaCompile> {
 
 application {
     mainModule.set("slideshow.slideshow")
-    mainClass.set("slideshow.slideshow.HelloApplication")
+    mainClass.set("slideshow.slideshow.SliderShowApplication")
 }
 
 javafx {

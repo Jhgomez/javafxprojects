@@ -4,7 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import java.io.IOException;
+import slideshow.slideshow.slider.SliderShow;
 import java.util.Objects;
 
 public class SliderShowApplication extends Application {
