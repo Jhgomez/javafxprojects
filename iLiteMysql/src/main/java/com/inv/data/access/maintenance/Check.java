@@ -27,7 +27,10 @@ public class Check {
             try {
                 stm= con.prepareStatement("SELECT * FROM employee WHERE user=? AND password=?");
                 stm.setString(1,user);
-                stm.setString(2, Security.encryptPassword(password));
+                // TODO
+                //                stm.setString(2, Security.encryptPassword(password));
+                // with this I can send an empty password
+                stm.setString(2, "");
                 rs=stm.executeQuery();
                 if (rs.next()){
                     isEmployee=true;

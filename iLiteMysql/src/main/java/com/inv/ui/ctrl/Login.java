@@ -239,7 +239,9 @@ public final class Login extends DragUtil implements Initializable {
         Runnable task=()->{
             if (MysqlConnection.checkConnection()) {
                 R.IS_DB_OK=true;
+                // TODO
 //                if (!userText.getText().isEmpty() && !passText.getText().isEmpty()) {
+                // with this I can send an empty password
                 if (!userText.getText().isEmpty() && passText.getText().isEmpty()) {
                     if (Check.isEmployee(userText.getText(), passText.getText())) {
                         Platform.runLater(()-> {
