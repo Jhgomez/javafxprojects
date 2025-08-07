@@ -1,0 +1,33 @@
+plugins {
+    id 'application'
+    id 'org.javamodularity.moduleplugin' version '1.8.12'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group 'eu.hansolo.fx'
+version '1.0'
+
+javafx {
+    version = '23'
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+application {
+    mainClass = 'eu.hansolo.fx.sankeyplot.Demo'
+
+    mainModule = 'sankeyplot'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+}
