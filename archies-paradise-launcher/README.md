@@ -19,3 +19,11 @@ When I added this project I got a message and the file indicated below was delet
 ```
 El archivo \archies-paradise-launcher\resources\mods\CustomSkinLoader_Forge.jar se ha detectado como infectado con Java.Trojan.GenericGBA.34443
 ```
+
+Also got the following message
+
+```
+File archies-paradise-launcher/plugin/libs/spigot-1.12.2-R0.1-SNAPSHOT-shaded.jar is 61.05 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB
+```
+
+So I deleted this jar
