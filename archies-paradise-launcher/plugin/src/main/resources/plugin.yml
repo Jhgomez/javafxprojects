@@ -1,0 +1,21 @@
+main: com.husker.launcher.plugin.AAuthPlugin
+name: AAuth
+version: 1.0
+author: Husker
+description: Plugin for custom launcher
+commands:
+  id:
+    description: Shows ID of player
+    usage: /<command> [nickname]
+  mm:
+    description: Set moderator mode to player
+    usage: /<command> [on/off]
+  moderatormode:
+    description: Set moderator mode to player
+    usage: /<command> [on/off]
+  backup:
+    description: Saves backup of the overworld
+    usage: /<command>
+  aaban:
+    description: Sets 'Guest' status to player by id
+    usage: /<command>

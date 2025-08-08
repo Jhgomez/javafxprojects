@@ -1,0 +1,6 @@
+title: Archie's Paradise Launcher
+folder: Archie's Paradise
+
+auth:
+  ip: localhost
+  port: 15565

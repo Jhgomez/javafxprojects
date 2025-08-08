@@ -1,0 +1,30 @@
+social:
+  vk: archie.enotik
+  instagram: archietheraccoon
+  youtube: UCAOEGtCBZUmctchRTkQ201A
+  github: husker-dev/minecraft-launcher
+port: 15565
+launcher:
+  version: 0.3.1
+mail:
+  password: Pass
+  login: Mylogin@mail.com
+  host: smtp.yandex.com
+  password_code:
+    text: Dear {name}, here is the code to change your password {code}
+    title: Email title
+  code:
+    text: 'Dear {name}, вот ваш код: {code}'
+    title: Email title
+  password_reset:
+    text: 'Dear {name}, here is your new password: {password}'
+    title: Email title
+owner:
+  name: owner name
+  url: owner url
+support:
+  name: support name
+  url: support url
+minecraft:
+  port: 25565
+  ip: 127.0.0.1

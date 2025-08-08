@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+}
+
+group 'com.husker.launcher'
+version 'unspecified'
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io/' }
+}
+
+dependencies {
+    implementation 'com.github.husker-dev:MIO:1.5'
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'org.json:json:+'
+
+    implementation 'net.java.dev.jna:jna:+'
+    implementation 'net.java.dev.jna:jna-platform:+'
+}

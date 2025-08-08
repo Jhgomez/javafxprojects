@@ -1,0 +1,153 @@
+plugins {
+    id 'java'
+    id "edu.sc.seis.launch4j" version "2.4.9"
+}
+
+group 'com.husker.launcher'
+
+sourceSets {
+    main {
+        resources {
+            srcDirs "src/main/resources"
+        }
+    }
+}
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+javadoc.options.encoding = 'UTF-8'
+
+/*
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.husker.launcher.Main'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+ */
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io/' }
+}
+
+dependencies {
+
+    // UI библиотека
+    implementation 'com.weblookandfeel:weblaf-ui:1.2.13'
+
+    // OpenGL
+    implementation 'org.jogamp.jogl:jogl-all-main:2.3.2'
+    implementation 'org.jogamp.gluegen:gluegen-rt-main:2.3.2'
+
+    // Для GET и POST запросов к серверу
+    implementation 'com.github.husker-dev:SimpleHttp:+'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.3'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.1'
+
+    // Для интеграции с Discord
+    implementation 'com.kohlschutter.junixsocket:junixsocket-common:2.0.4'
+    implementation 'com.kohlschutter.junixsocket:junixsocket-native-common:2.0.4'
+
+    // Для хранения информации
+    implementation 'org.json:json:+'
+    implementation 'org.yaml:snakeyaml:+'
+
+    // Логирование
+    implementation 'log4j:log4j:1.2.17'
+
+    // Всякие полезные плюшки
+    implementation 'commons-io:commons-io:2.5'
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'com.github.husker-dev:MIO:1.5'
+
+    // Поддержка нативных функций Windows
+    implementation 'com.nativelibs4java:bridj:+'
+    implementation 'net.java.dev.jna:jna:+'
+    implementation 'net.java.dev.jna:jna-platform:+'
+
+    // MD to HTML
+    implementation 'com.atlassian.commonmark:commonmark:0.16.1'
+}
+
+// launch4j
+launch4j {
+    mainClassName = "com.husker.launcher.Main"
+    jreMinVersion = '8'
+    icon = "${projectDir}/icon.ico"
+    jvmOptions = ["-Xms32m", "-Xmx800m"]
+    dontWrapJar = true
+    companyName = "Heart&Paw"
+    productName = "Archie's Paradise Launcher";
+}
+
+task clearRelease(type: Delete) {
+    delete "$buildDir/release"
+}
+
+task copyExe(type: Copy){
+    from file("$buildDir/launch4j/launcher.exe")
+    into file("$buildDir/release")
+}
+
+task copyLib(type: Copy){
+    from file("$buildDir/launch4j/lib")
+    into file("$buildDir/release/lib")
+}
+
+task copyResources(type: Copy){
+    from file("$projectDir/resources")
+    into file("$buildDir/release/resources")
+}
+
+task createShell()  {
+    doLast {
+        new File("$buildDir/release", "shell.sh").text = """java -cp "lib/*" com.husker.launcher.Main -Xms200m -Xmx800m
+exit 0
+"""
+        new File("$buildDir/release", "console.bat").text = """java -cp "lib/*" com.husker.launcher.Main -Xms200m -Xmx800m
+"""
+    }
+}
+
+task zipRelease(type: Zip) {
+    archiveFileName = "release.zip"
+    destinationDirectory = file("$buildDir")
+    from "$buildDir/release"
+}
+
+task copyUpdater(type: Copy){
+    from file("$projectDir/updater/build/libs/updater.jar")
+    into file("$buildDir/release")
+}
+
+task copyAnticheat(type: Copy){
+    from file("$projectDir/anticheat/build/libs/anticheat.jar")
+    into file("$buildDir/release")
+}
+
+task buildRelease(type: GradleBuild){
+    tasks = ['clearRelease', 'createExe', ':updater:jar', 'copyExe', 'copyLib', 'copyResources', 'createShell', 'copyUpdater', ':anticheat:jar', 'copyAnticheat', 'zipRelease']
+    group = "release"
+    doLast {
+        println ""
+        println "Release directory:"
+        println "$buildDir\\release"
+    }
+}
+
+task updaterTest(type: GradleBuild){
+    tasks = [':updater:jar']
+    group = "release"
+    doLast{
+        exec {
+            workingDir "$projectDir/updater/build/libs/"
+            executable "java"
+            args "-jar", "$projectDir/updater/build/libs/updater.jar", "--safe=true"
+        }
+
+    }
+}
