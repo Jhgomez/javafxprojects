@@ -5,12 +5,12 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -30,6 +30,7 @@ public class TwoDShapes {
         drawPolygons();
         drawPolylines();
         drawCubicCurves();
+        drawQuadraticCurves();
 
         Scene scene = new Scene(group, 1400, 640);
 
@@ -43,6 +44,57 @@ public class TwoDShapes {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * Mathematically, a quadratic curve is one that is described by a quadratic function like − y = ax2 + bx + c.
+     *
+     * A quadratic curve is a Bezier parametric curve in the XY plane which is a curve of degree 2. It is drawn using
+     * three points: start point, end point and control point
+     */
+    private void drawQuadraticCurves() {
+        QuadCurve quadCurve = new QuadCurve();
+
+        quadCurve.setStartX(950.0);
+        quadCurve.setStartY(370.0f);
+        quadCurve.setEndX(1350.0f);
+        quadCurve.setEndY(370.0f);
+        quadCurve.setControlX(1100.0f);
+        quadCurve.setControlY(150.0f);
+
+        Text quadCurveText = new Text("Quad Curve/Bezier quadrilateral curve");
+        quadCurveText.setFont(new Font(16));
+        quadCurveText.setX(975);
+        quadCurveText.setY(250);
+
+        //Quadrilateral curve with bloom effect
+        QuadCurve quadCurve2 = new QuadCurve();
+
+        //Adding properties to the Quad Curve
+        quadCurve2.setStartX(1050.0);
+        quadCurve2.setStartY(500.0f);
+        quadCurve2.setEndX(1250.0f);
+        quadCurve2.setEndY(500.0f);
+        quadCurve2.setControlX(1200.0f);
+        quadCurve2.setControlY(280.0f);
+
+        quadCurve2.setFill(Color.RED);
+
+        //Instantiating the Bloom class
+        Bloom bloom = new Bloom();
+
+        //setting threshold for bloom
+        bloom.setThreshold(0.1);
+
+        //Applying bloom effect to quadCurve
+        quadCurve2.setEffect(bloom);
+
+        Text quadCurveText2 = new Text("Quad Curve/Bezier quadrilateral curve with blossom effect");
+        quadCurveText2.setFont(new Font(16));
+        quadCurveText2.setX(975);
+        quadCurveText2.setY(390);
+
+        nodes.addAll(quadCurve, quadCurveText, quadCurve2, quadCurveText2);
     }
 
     /**
