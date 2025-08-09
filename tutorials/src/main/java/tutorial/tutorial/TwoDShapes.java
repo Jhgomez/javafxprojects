@@ -5,10 +5,12 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -27,8 +29,9 @@ public class TwoDShapes {
         drawAndAnimatePlanetOrbitUsingEllipse();
         drawPolygons();
         drawPolylines();
+        drawCubicCurves();
 
-        Scene scene = new Scene(group, 1000, 640);
+        Scene scene = new Scene(group, 1400, 640);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -40,6 +43,59 @@ public class TwoDShapes {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * A Cubic Curve is described by a third-degree polynomial function of two variables
+     *
+     * These Bezier curves are generally used in computer graphics. They are parametric curves which appear reasonably
+     * smooth at all scales.
+     *
+     * A cubic curve is a Bezier parametric curve in the XY plane is a curve of degree 3. It is drawn using four
+     * points − Start Point, End Point, Control Point and Control Point2. These are passed as parameters
+     */
+    private void drawCubicCurves() {
+        CubicCurve cubicCurve = new CubicCurve();
+        cubicCurve.setStartX(975.0f);
+        cubicCurve.setStartY(80.0f);
+        cubicCurve.setControlX1(1275.0f);
+        cubicCurve.setControlY1(-30.0f);
+        cubicCurve.setControlX2(1050.0f);
+        cubicCurve.setControlY2(180.0f);
+        cubicCurve.setEndX(1375.0f);
+        cubicCurve.setEndY(80.0f);
+
+        Text cubicCurveText = new Text("Cubic Curves");
+        cubicCurveText.setFont(new Font(16));
+        cubicCurveText.setX(1000);
+        cubicCurveText.setY(40);
+
+        //DropShadow effect on a Cubic Curve
+        CubicCurve cubicCurve2 = new CubicCurve();
+
+        cubicCurve2.setStartX(1025.0f);
+        cubicCurve2.setStartY(200.0f);
+        cubicCurve2.setControlX1(1175.0f);
+        cubicCurve2.setControlY1(140.0f);
+        cubicCurve2.setControlX2(1125.0f);
+        cubicCurve2.setControlY2(300.0f);
+        cubicCurve2.setEndX(1175.0f);
+        cubicCurve2.setEndY(150.0f);
+
+        cubicCurve2.setFill(Color.RED);
+
+        //Instantiating the DropShadow class
+        DropShadow ds = new DropShadow();
+
+        //Applying DropShadow effect to cubicCurve
+        cubicCurve2.setEffect(ds);
+
+        Text cubicCurveText2 = new Text("Drop Shadow Effect on A Cubic Curve");
+        cubicCurveText2.setFont(new Font(16));
+        cubicCurveText2.setX(1000);
+        cubicCurveText2.setY(140);
+
+        nodes.addAll(cubicCurveText, cubicCurve, cubicCurveText2, cubicCurve2);
     }
 
     private void drawPolylines() {
