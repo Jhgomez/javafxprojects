@@ -7,10 +7,9 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -26,8 +25,10 @@ public class TwoDShapes {
         drawRoundedRectangle();
         drawOlympicsSymbolUsingCircles();
         drawAndAnimatePlanetOrbitUsingEllipse();
+        drawPolygons();
+        drawPolylines();
 
-        Scene scene = new Scene(group, 800, 440);
+        Scene scene = new Scene(group, 1000, 640);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -39,6 +40,64 @@ public class TwoDShapes {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    private void drawPolylines() {
+        //A Polyline is same as a polygon except that a polyline is not closed in the end.
+        // Hexagon polyline means it is a polyline of 5 lines and not 6 because the Hexagon is not closed
+        Polyline polyline_hexagon = new Polyline();
+
+        polyline_hexagon.getPoints().addAll(
+                100.0, 430.0,
+                300.0, 430.0,
+                350.0, 530.0,
+                300.0, 630.0,
+                100.0, 630.0,
+                50.0, 530.0
+        );
+
+        // Polyline of 4 vertices
+        Polyline polyline_pentagon = new Polyline(
+                520.0, 430.0,
+                680.0, 530.0,
+                520.0, 630.0,
+                380.0, 530.0
+        );
+
+        Text polyline_text = new Text("Polylines");
+        polyline_text.setX(340);
+        polyline_text.setY(420);
+        polyline_text.setFont(new Font(16));
+
+        nodes.addAll(polyline_text, polyline_hexagon, polyline_pentagon);
+    }
+
+    private void drawPolygons() {
+        Polygon polygon_hexagon = new Polygon();
+
+        // you need to pass points, every two values is an X,Y point
+        polygon_hexagon.getPoints().addAll(
+                700.0, 50.0,
+                900.0, 50.0,
+                950.0, 150.0,
+                900.0, 250.0,
+                700.0, 250.0,
+                650.0, 150.0
+        );
+
+        Polygon polygon_rhombus = new Polygon(
+                800.0, 275.0,
+                950.0, 375.0,
+                800.0, 475.0,
+                650.0, 375.0
+        );
+
+        Text polygon_text = new Text("Polygons");
+        polygon_text.setX(800);
+        polygon_text.setY(40);
+        polygon_text.setFont(new Font(16));
+
+        nodes.addAll(polygon_text, polygon_hexagon, polygon_rhombus);
     }
 
     private void drawAndAnimatePlanetOrbitUsingEllipse() {
