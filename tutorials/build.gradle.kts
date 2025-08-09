@@ -4,7 +4,7 @@ plugins {
     id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
-group = "basics"
+group = "tutorials"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -24,8 +24,8 @@ tasks.withType<JavaCompile> {
 }
 
 application {
-    mainModule.set("basics.basics")
-    mainClass.set("basics.basics.BasicsApp")
+    mainModule.set("tutorial.tutorial")
+    mainClass.set("tutorial.tutorial.TutorialApp")
 }
 
 javafx {

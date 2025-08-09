@@ -1,15 +1,10 @@
-package basics.basics;
+package tutorial.tutorial;
 
 import javafx.animation.PathTransition;
-import javafx.application.Application;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
@@ -19,11 +14,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
-
-public class BasicsApp extends Application {
-    @Override
-    public void start(Stage stage) throws IOException {
+public class TwoDShapes {
+    public static void getTwoDShapes(Runnable runnable) {
         Group group = new Group();
 //        AnchorPane ap = new AnchorPane();
         ObservableList<Node> nodes = group.getChildren();
@@ -80,15 +72,17 @@ public class BasicsApp extends Application {
 
         nodes.addAll(orbit, planet); // is important to add orbit first so planet is draw on top of it
 
-        Scene scene = new Scene(group, 520, 440);
+        Scene scene = new Scene(group, 800, 440);
+
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
-        stage.setTitle("Hello!");
-        stage.setScene(scene);
-        stage.show();
-    }
+        Stage stage = new Stage();
 
-    public static void main(String[] args) {
-        launch();
+        stage.setTitle("2D Shapes");
+        stage.setScene(scene);
+        stage.sizeToScene();
+        stage.show();
+
+        stage.setOnCloseRequest(e -> runnable.run());
     }
 }
