@@ -1,22 +1,12 @@
 package tutorial.tutorial;
 
-import javafx.animation.PathTransition;
 import javafx.application.Application;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Ellipse;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 import java.io.IOException;
 
@@ -27,7 +17,7 @@ public class TutorialApp extends Application {
         Runnable runnable = stage::show;
 
         _2DShapes.setOnAction(e -> {
-            TwoDShapes.getTwoDShapes(runnable);
+            new TwoDShapes().displayTwoDShapes(runnable);
             stage.hide();
         });
 

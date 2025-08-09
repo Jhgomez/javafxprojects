@@ -15,44 +15,34 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class TwoDShapes {
-    public static void getTwoDShapes(Runnable runnable) {
+    ObservableList<Node> nodes;
+
+    public void displayTwoDShapes(Runnable runnable) {
         Group group = new Group();
 //        AnchorPane ap = new AnchorPane();
-        ObservableList<Node> nodes = group.getChildren();
+        nodes = group.getChildren();
 
-        // Drawing a Line
-        nodes.add(new Line(10, 100 , 20, 200));
+        drawLine();
+        drawRoundedRectangle();
+        drawOlympicsSymbolUsingCircles();
+        drawAndAnimatePlanetOrbitUsingEllipse();
 
-        // Drawing a "rounded "rectangle
-        Rectangle rectangle = new Rectangle(50, 20, 250, 180);
-        rectangle.setArcHeight(40);
-        rectangle.setArcWidth(30);
-        rectangle.setFill(Paint.valueOf("#cab2d6"));
+        Scene scene = new Scene(group, 800, 440);
 
-        nodes.add(rectangle);
-//        ap.setBackground(Background.fill(Paint.valueOf("#cab2d6")));
-//        Color.hsb(50, 1, 1)
+        scene.setFill(Paint.valueOf("#fdbf6f"));
 
-//        root.getChildren().add(ap);
+        Stage stage = new Stage();
 
-        // Drawing olympics symbols with using cirles
-        Object[][] olympicsSymbolArray = new Object[][] {
-                {100.0, 275.0, 50.0, Color.BLUE},
-                {175.0, 275.0, 50.0, Color.BLACK},
-                {250.0, 275.0, 50.0, Color.RED},
-                {135.0, 340.0, 50.0, Color.YELLOW},
-                {215.0, 340.0, 50.0, Color.GREEN}
-        };
+        stage.setTitle("2D Shapes");
+        stage.setScene(scene);
+        stage.sizeToScene();
+        stage.show();
 
-        for (Object[] o : olympicsSymbolArray) {
-            Circle circle = new Circle((Double) o[0], (Double)o[1], (Double)o[2]);
-            circle.setStroke((Color) o[3]);
-            circle.setFill(Color.WHITE);
+        stage.setOnCloseRequest(e -> runnable.run());
+    }
 
-            nodes.add(circle);
-        }
-
-        // Drawing an planet's orbit using an ellipse and animate it
+    private void drawAndAnimatePlanetOrbitUsingEllipse() {
+        // ============= Drawing a planet's orbit using an ellipse and animate it =================
         Ellipse orbit = new Ellipse(500, 250, 150, 100);
         orbit.setFill(Color.WHITE);
         orbit.setStroke(Color.BLACK);
@@ -71,18 +61,36 @@ public class TwoDShapes {
         pathTransition.play();
 
         nodes.addAll(orbit, planet); // is important to add orbit first so planet is draw on top of it
+    }
 
-        Scene scene = new Scene(group, 800, 440);
+    private void drawOlympicsSymbolUsingCircles() {
+        Object[][] olympicsSymbolArray = new Object[][] {
+                {100.0, 275.0, 50.0, Color.BLUE},
+                {175.0, 275.0, 50.0, Color.BLACK},
+                {250.0, 275.0, 50.0, Color.RED},
+                {135.0, 340.0, 50.0, Color.YELLOW},
+                {215.0, 340.0, 50.0, Color.GREEN}
+        };
 
-        scene.setFill(Paint.valueOf("#fdbf6f"));
+        for (Object[] o : olympicsSymbolArray) {
+            Circle circle = new Circle((Double) o[0], (Double)o[1], (Double)o[2]);
+            circle.setStroke((Color) o[3]);
+            circle.setFill(Color.WHITE);
 
-        Stage stage = new Stage();
+            nodes.add(circle);
+        }
+    }
 
-        stage.setTitle("2D Shapes");
-        stage.setScene(scene);
-        stage.sizeToScene();
-        stage.show();
+    private void drawRoundedRectangle() {
+        Rectangle rectangle = new Rectangle(50, 20, 250, 180);
+        rectangle.setArcHeight(40);
+        rectangle.setArcWidth(30);
+        rectangle.setFill(Paint.valueOf("#cab2d6"));
 
-        stage.setOnCloseRequest(e -> runnable.run());
+        nodes.add(rectangle);
+    }
+
+    private void drawLine() {
+        nodes.add(new Line(10, 100 , 20, 200));
     }
 }
