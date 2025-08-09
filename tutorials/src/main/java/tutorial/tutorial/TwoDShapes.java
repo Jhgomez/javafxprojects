@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
@@ -17,6 +18,11 @@ import javafx.util.Duration;
 
 public class TwoDShapes {
     ObservableList<Node> nodes;
+
+    private double currentX;
+    private double clickSceneX;
+    private double currentY;
+    private double clickSceneY;
 
     public void displayTwoDShapes(Runnable runnable) {
         Group group = new Group();
@@ -32,8 +38,9 @@ public class TwoDShapes {
         drawCubicCurves();
         drawQuadraticCurves();
         drawArc();
+        drawSVGs();
 
-        Scene scene = new Scene(group, 1400, 640);
+        Scene scene = new Scene(group, 1500, 740);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -42,9 +49,62 @@ public class TwoDShapes {
         stage.setTitle("2D Shapes");
         stage.setScene(scene);
         stage.sizeToScene();
+
+        for (Node node : nodes) {
+            DragUtil.setDraggable(node);
+        }
+
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * SVG (Scalable Vector Graphics) is an XML based language to define vector based graphics. The <path> element in
+     * the SVG library is the most powerful while drawing basic shapes. Using paths, you can draw lines, curves, arcs,
+     * and also various complex shapes including them.
+     *
+     * Even though a path is similar to the polyline element while creating complex shapes, the scale of complex shapes
+     * drawn using a polyline element is not larger than shapes drawn using path element.
+     *
+     * A path in SVG is defined by only one parameter. This parameter holds series of commands, like line, curve or arc
+     * commands. And each of these commands are instantiated using a single letter; for example, the letter 'M' calls the
+     * "Move To" command, the letter 'L' calls the "line" command and 'C' calls "Curve" command. And these letters can
+     * either be specified as either a lowercase or an uppercase letter. The lowercase letter specifies relative
+     * coordinates, while the uppercase letter specifies absolute coordinates.
+     *
+     * The same concept of SVGPath is adopted by JavaFX, in order to create objects.
+     *
+     * In JavaFX we can construct images by parsing SVG paths. Such shapes are represented by the class named SVGPath.
+     */
+    private void drawSVGs() {
+        SVGPath triangleSvgPath = new SVGPath();
+        String triagnlePath = "M 100 100 L 300 100 L 200 300 z";
+        //Setting the SVGPath in the form of string
+        triangleSvgPath.setContent(triagnlePath);
+        triangleSvgPath.setLayoutX(885);
+        triangleSvgPath.setLayoutY(420);
+
+        SVGPath bezierSvgPath = new SVGPath();
+
+        String bezierPath = "M 70 110 C 70 180, 210 180, 210 110";
+
+        //Setting the SVGPath in the form of string
+        bezierSvgPath.setContent(bezierPath);
+
+        // Setting the stroke and fill of the path
+        bezierSvgPath.setStroke(Color.BLACK);
+        bezierSvgPath.setFill(Color.ORANGE);
+
+        bezierSvgPath.setLayoutX(1150);
+        bezierSvgPath.setLayoutY(420);
+
+        Text pathText = new Text("SVGs Paths, drawing a triangle and bezier curve using SVG Paths");
+        pathText.setFont(new Font(16));
+        pathText.setX(970);
+        pathText.setY(517);
+
+        nodes.addAll(triangleSvgPath, bezierSvgPath, pathText);
     }
 
     /**
