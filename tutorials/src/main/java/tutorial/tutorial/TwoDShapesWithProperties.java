@@ -5,6 +5,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
@@ -12,22 +13,19 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-public class TwoDShapes {
+public class TwoDShapesWithProperties {
     ObservableList<Node> nodes;
 
     public void displayScreen(Runnable runnable) {
         Group group = new Group();
 //        AnchorPane ap = new AnchorPane();
         nodes = group.getChildren();
-
-        drawLine();
-        drawRoundedRectangle();
-        drawOlympicsSymbolUsingCircles();
-        drawAndAnimatePlanetOrbitUsingEllipse();
-        drawPolygons();
+        
+        strokeTypeProperty();
         drawPolylines();
         drawCubicCurves();
         drawQuadraticCurves();
@@ -302,32 +300,38 @@ public class TwoDShapes {
         nodes.addAll(polyline_text, polyline_hexagon, polyline_pentagon);
     }
 
-    private void drawPolygons() {
-        Polygon polygon_hexagon = new Polygon();
+    private void strokeTypeProperty() {
+        double[] triangle_coordinates = {
+                25.0, 75.0,
+                95.0, 175.0,
+                25.0, 275.0,
+        };
 
-        // you need to pass points, every two values is an X,Y point
-        polygon_hexagon.getPoints().addAll(
-                700.0, 50.0,
-                900.0, 50.0,
-                950.0, 150.0,
-                900.0, 250.0,
-                700.0, 250.0,
-                650.0, 150.0
-        );
+        Polygon triangle_hexagon1 = new Polygon(triangle_coordinates);
+        triangle_hexagon1.setStroke(Color.RED);
+        triangle_hexagon1.setStrokeWidth(16);
+        triangle_hexagon1.setStrokeType(StrokeType.CENTERED);
 
-        Polygon polygon_rhombus = new Polygon(
-                800.0, 275.0,
-                950.0, 375.0,
-                800.0, 475.0,
-                650.0, 375.0
-        );
+        Polygon triangle_hexagon2 = new Polygon(triangle_coordinates);
+        triangle_hexagon2.setStroke(Color.RED);
+        triangle_hexagon2.setStrokeWidth(16);
+        triangle_hexagon2.setStrokeType(StrokeType.INSIDE);
+        triangle_hexagon2.setLayoutX(100);
 
-        Text polygon_text = new Text("Polygons");
-        polygon_text.setX(800);
-        polygon_text.setY(40);
+        Polygon triangle_hexagon3 = new Polygon(triangle_coordinates);
+        triangle_hexagon3.setStroke(Color.RED);
+        triangle_hexagon3.setStrokeWidth(16);
+        triangle_hexagon3.setStrokeType(StrokeType.OUTSIDE);
+        triangle_hexagon3.setLayoutX(210);
+
+        Text polygon_text = new Text("Same Polygon(triangle) but with CENTER, INSIDE and OUTSIDE Stroke type");
+        polygon_text.setWrappingWidth(360);
+        polygon_text.setTextAlignment(TextAlignment.CENTER);
+        polygon_text.setX(20);
+        polygon_text.setY(20);
         polygon_text.setFont(new Font(16));
 
-        nodes.addAll(polygon_text, polygon_hexagon, polygon_rhombus);
+        nodes.addAll(polygon_text, triangle_hexagon1, triangle_hexagon2, triangle_hexagon3);
     }
 
     private void drawAndAnimatePlanetOrbitUsingEllipse() {

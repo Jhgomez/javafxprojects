@@ -2,6 +2,7 @@ package tutorial.tutorial;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
@@ -14,17 +15,27 @@ public class TutorialApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         Button _2DShapes =  new Button("2D Shapes");
+        Button _2DShapesProperties =  new Button("Properties 2D Shapes");
+
         Runnable runnable = stage::show;
 
         _2DShapes.setOnAction(e -> {
-            new TwoDShapes().displayTwoDShapes(runnable);
+            new TwoDShapes().displayScreen(runnable);
+            stage.hide();
+        });
+
+        _2DShapesProperties.setOnAction(e -> {
+            new TwoDShapesWithProperties().displayScreen(runnable);
             stage.hide();
         });
 
         VBox root = new VBox(
                 16.0,
-                _2DShapes
+                _2DShapes,
+                _2DShapesProperties
         );
+
+        root.setAlignment(Pos.CENTER);
 
         root.setPadding(new Insets(24, 80, 24, 80));
 
