@@ -5,7 +5,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
@@ -26,7 +25,7 @@ public class TwoDShapesWithProperties {
         nodes = group.getChildren();
         
         strokeTypeProperty();
-        drawPolylines();
+        strokeLineJoinProperty();
         drawCubicCurves();
         drawQuadraticCurves();
         drawArc();
@@ -270,34 +269,54 @@ public class TwoDShapesWithProperties {
         nodes.addAll(cubicCurveText, cubicCurve, cubicCurveText2, cubicCurve2);
     }
 
-    private void drawPolylines() {
-        //A Polyline is same as a polygon except that a polyline is not closed in the end.
-        // Hexagon polyline means it is a polyline of 5 lines and not 6 because the Hexagon is not closed
-        Polyline polyline_hexagon = new Polyline();
+    /**
+     * With this property JavaFX allows you to join multiple 2D shape objects to form another bigger object.
+     *
+     * The Stroke Line Join Property is used to designate the shape of the joint used to combine two line objects while
+     * forming another shape.
+     *
+     * The stroke line join is of three types.
+     * - Bevel − In bevel join, the outside edges of the intersection are connected with a line segment.
+     * - Miter − In miter join, the outside edges of the intersection are joined together forming a sharp edge.
+     * - Round − In round join, the outside edges of the intersection are joined by rounding off the corner, the radius
+     *           of this will be exactly half the width of the join.
+     */
+    private void strokeLineJoinProperty() {
+        double[] hexagon_coordinates = {
+                450.0, 80.0,
+                500.0, 80.0,
+                520.0, 130.0,
+                500.0, 180.0,
+                450.0, 180.0,
+                430.0, 130.0
+        };
 
-        polyline_hexagon.getPoints().addAll(
-                100.0, 430.0,
-                300.0, 430.0,
-                350.0, 530.0,
-                300.0, 630.0,
-                100.0, 630.0,
-                50.0, 530.0
-        );
+        Polygon polygon_hexagon = new Polygon(hexagon_coordinates);
+        polygon_hexagon.setStrokeLineJoin(StrokeLineJoin.BEVEL);
+        polygon_hexagon.setStroke(Color.RED);
+        polygon_hexagon.setStrokeWidth(16);
 
-        // Polyline of 4 vertices
-        Polyline polyline_pentagon = new Polyline(
-                520.0, 430.0,
-                680.0, 530.0,
-                520.0, 630.0,
-                380.0, 530.0
-        );
+        Polygon polygon_hexagon1 = new Polygon(hexagon_coordinates);
+        polygon_hexagon1.setStrokeLineJoin(StrokeLineJoin.MITER);
+        polygon_hexagon1.setStroke(Color.RED);
+        polygon_hexagon1.setStrokeWidth(16);
+        polygon_hexagon1.setLayoutX(110);
 
-        Text polyline_text = new Text("Polylines");
-        polyline_text.setX(340);
-        polyline_text.setY(420);
-        polyline_text.setFont(new Font(16));
+        Polygon polygon_hexagon2 = new Polygon(hexagon_coordinates);
+        polygon_hexagon2.setStrokeLineJoin(StrokeLineJoin.ROUND);
+        polygon_hexagon2.setStroke(Color.RED);
+        polygon_hexagon2.setStrokeWidth(16);
+        polygon_hexagon2.setLayoutX(220);
 
-        nodes.addAll(polyline_text, polyline_hexagon, polyline_pentagon);
+        Text polygon_text = new Text("Same hexagon polygon with BEVEL, METER and ROUND stroke line join property respectively");
+        polygon_text.setWrappingWidth(360);
+        polygon_text.setTextAlignment(TextAlignment.CENTER);
+        polygon_text.setX(400);
+        polygon_text.setY(20);
+        polygon_text.setFont(new Font(16));
+        polygon_text.setFont(new Font(16));
+
+        nodes.addAll(polygon_text, polygon_hexagon, polygon_hexagon1, polygon_hexagon2);
     }
 
     private void strokeTypeProperty() {
@@ -307,22 +326,23 @@ public class TwoDShapesWithProperties {
                 25.0, 275.0,
         };
 
-        Polygon triangle_hexagon1 = new Polygon(triangle_coordinates);
-        triangle_hexagon1.setStroke(Color.RED);
-        triangle_hexagon1.setStrokeWidth(16);
-        triangle_hexagon1.setStrokeType(StrokeType.CENTERED);
+        Polygon polygon_triangle1 = new Polygon(triangle_coordinates);
+        polygon_triangle1.setStroke(Color.RED);
+        polygon_triangle1.setStrokeWidth(16);
+        polygon_triangle1.setStrokeType(StrokeType.CENTERED);
 
-        Polygon triangle_hexagon2 = new Polygon(triangle_coordinates);
-        triangle_hexagon2.setStroke(Color.RED);
-        triangle_hexagon2.setStrokeWidth(16);
-        triangle_hexagon2.setStrokeType(StrokeType.INSIDE);
-        triangle_hexagon2.setLayoutX(100);
+        Polygon polygon_triangle2 = new Polygon(triangle_coordinates);
+        polygon_triangle2.setStroke(Color.RED);
+        polygon_triangle2.setStrokeWidth(16);
+        polygon_triangle2.setStrokeType(StrokeType.INSIDE);
+        polygon_triangle2.setLayoutX(100);
 
-        Polygon triangle_hexagon3 = new Polygon(triangle_coordinates);
-        triangle_hexagon3.setStroke(Color.RED);
-        triangle_hexagon3.setStrokeWidth(16);
-        triangle_hexagon3.setStrokeType(StrokeType.OUTSIDE);
-        triangle_hexagon3.setLayoutX(210);
+        Polygon polygon_triangle3 = new Polygon(triangle_coordinates);
+        polygon_triangle3.setStroke(Color.RED);
+        polygon_triangle3.setStrokeWidth(16);
+        polygon_triangle3.setStrokeType(StrokeType.OUTSIDE);
+        polygon_triangle3.setLayoutX(210);
+        polygon_triangle3.setLayoutY(30);
 
         Text polygon_text = new Text("Same Polygon(triangle) but with CENTER, INSIDE and OUTSIDE Stroke type");
         polygon_text.setWrappingWidth(360);
@@ -331,7 +351,7 @@ public class TwoDShapesWithProperties {
         polygon_text.setY(20);
         polygon_text.setFont(new Font(16));
 
-        nodes.addAll(polygon_text, triangle_hexagon1, triangle_hexagon2, triangle_hexagon3);
+        nodes.addAll(polygon_text, polygon_triangle1, polygon_triangle2, polygon_triangle3);
     }
 
     private void drawAndAnimatePlanetOrbitUsingEllipse() {
