@@ -26,7 +26,7 @@ public class TwoDShapesWithProperties {
         
         strokeTypeProperty();
         strokeLineJoinProperty();
-        drawCubicCurves();
+        strokeMiterLimitProperty();
         drawQuadraticCurves();
         drawArc();
         drawSVGs();
@@ -217,56 +217,30 @@ public class TwoDShapesWithProperties {
     }
 
     /**
-     * A Cubic Curve is described by a third-degree polynomial function of two variables
-     *
-     * These Bezier curves are generally used in computer graphics. They are parametric curves which appear reasonably
-     * smooth at all scales.
-     *
-     * A cubic curve is a Bezier parametric curve in the XY plane is a curve of degree 3. It is drawn using four
-     * points − Start Point, End Point, Control Point and Control Point2. These are passed as parameters
+     * This property represents the limit for the distance between the inside point of the joint and the outside point
+     * of the joint. If the distance between these two points exceeds the given limit, the miter is cut at the edge.
      */
-    private void drawCubicCurves() {
-        CubicCurve cubicCurve = new CubicCurve();
-        cubicCurve.setStartX(975.0f);
-        cubicCurve.setStartY(80.0f);
-        cubicCurve.setControlX1(1275.0f);
-        cubicCurve.setControlY1(-30.0f);
-        cubicCurve.setControlX2(1050.0f);
-        cubicCurve.setControlY2(180.0f);
-        cubicCurve.setEndX(1375.0f);
-        cubicCurve.setEndY(80.0f);
+    private void strokeMiterLimitProperty() {
+        Polygon triangle = new Polygon();
 
-        Text cubicCurveText = new Text("Cubic Curves");
-        cubicCurveText.setFont(new Font(16));
-        cubicCurveText.setX(1000);
-        cubicCurveText.setY(40);
+        //Adding coordinates to the polygon
+        triangle.getPoints().addAll(
+                450.0, 300.0,
+                550.0, 230.0,
+                650.0, 300.0
+        );
 
-        //DropShadow effect on a Cubic Curve
-        CubicCurve cubicCurve2 = new CubicCurve();
+        triangle.setFill(Color.BLUE);
+        triangle.setStroke(Color.BLACK);
+        triangle.setStrokeWidth(7.0);
+        triangle.setStrokeMiterLimit(2);
 
-        cubicCurve2.setStartX(1025.0f);
-        cubicCurve2.setStartY(200.0f);
-        cubicCurve2.setControlX1(1175.0f);
-        cubicCurve2.setControlY1(140.0f);
-        cubicCurve2.setControlX2(1125.0f);
-        cubicCurve2.setControlY2(300.0f);
-        cubicCurve2.setEndX(1175.0f);
-        cubicCurve2.setEndY(150.0f);
-
-        cubicCurve2.setFill(Color.RED);
-
-        //Instantiating the DropShadow class
-        DropShadow ds = new DropShadow();
-
-        //Applying DropShadow effect to cubicCurve
-        cubicCurve2.setEffect(ds);
-
-        Text cubicCurveText2 = new Text("Drop Shadow Effect on A Cubic Curve");
+        Text cubicCurveText2 = new Text("Triangle with Stroke Miter Limit Property");
         cubicCurveText2.setFont(new Font(16));
-        cubicCurveText2.setX(1000);
-        cubicCurveText2.setY(140);
+        cubicCurveText2.setX(400);
+        cubicCurveText2.setY(215);
 
-        nodes.addAll(cubicCurveText, cubicCurve, cubicCurveText2, cubicCurve2);
+        nodes.addAll(triangle, cubicCurveText2);
     }
 
     /**
