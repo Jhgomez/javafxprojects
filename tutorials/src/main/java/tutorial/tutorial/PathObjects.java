@@ -5,7 +5,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.effect.Bloom;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
@@ -31,8 +30,8 @@ public class PathObjects {
 
         aStarPath();
         crossedLines();
-        drawCubicCurves();
-        drawQuadraticCurves();
+        vLineAndHLine();
+        quadraticCurve();
         drawArc();
         drawSVGs();
 
@@ -176,7 +175,7 @@ public class PathObjects {
      * A quadratic curve is a Bezier parametric curve in the XY plane which is a curve of degree 2. It is drawn using
      * three points: start point, end point and control point
      */
-    private void drawQuadraticCurves() {
+    private void quadraticCurve() {
         QuadCurve quadCurve = new QuadCurve();
 
         quadCurve.setStartX(950.0);
@@ -230,48 +229,44 @@ public class PathObjects {
      * A cubic curve is a Bezier parametric curve in the XY plane is a curve of degree 3. It is drawn using four
      * points − Start Point, End Point, Control Point and Control Point2. These are passed as parameters
      */
-    private void drawCubicCurves() {
-        CubicCurve cubicCurve = new CubicCurve();
-        cubicCurve.setStartX(975.0f);
-        cubicCurve.setStartY(80.0f);
-        cubicCurve.setControlX1(1275.0f);
-        cubicCurve.setControlY1(-30.0f);
-        cubicCurve.setControlX2(1050.0f);
-        cubicCurve.setControlY2(180.0f);
-        cubicCurve.setEndX(1375.0f);
-        cubicCurve.setEndY(80.0f);
+    private void vLineAndHLine() {
+        Path path = new Path();
 
-        Text cubicCurveText = new Text("Cubic Curves");
-        cubicCurveText.setFont(new Font(16));
-        cubicCurveText.setX(1000);
-        cubicCurveText.setY(40);
+        ObservableList<PathElement> elements = path.getElements();
 
-        //DropShadow effect on a Cubic Curve
-        CubicCurve cubicCurve2 = new CubicCurve();
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(400.0);
+        moveTo.setY(70.0f);
+        elements.add(moveTo);
 
-        cubicCurve2.setStartX(1025.0f);
-        cubicCurve2.setStartY(200.0f);
-        cubicCurve2.setControlX1(1175.0f);
-        cubicCurve2.setControlY1(140.0f);
-        cubicCurve2.setControlX2(1125.0f);
-        cubicCurve2.setControlY2(300.0f);
-        cubicCurve2.setEndX(1175.0f);
-        cubicCurve2.setEndY(150.0f);
+        VLineTo vlineTo = new VLineTo();
+        vlineTo.setY(90);
+        elements.add(vlineTo);
 
-        cubicCurve2.setFill(Color.RED);
+        HLineTo hLineTo = new HLineTo();
+        hLineTo.setX(480);
+        elements.add(hLineTo);
 
-        //Instantiating the DropShadow class
-        DropShadow ds = new DropShadow();
+        moveTo = new MoveTo();
+        moveTo.setX(480.0);
+        moveTo.setY(90.0);
+        elements.add(moveTo);
 
-        //Applying DropShadow effect to cubicCurve
-        cubicCurve2.setEffect(ds);
+        vlineTo = new VLineTo();
+        vlineTo.setY(70);
+        elements.add(vlineTo);
 
-        Text cubicCurveText2 = new Text("Drop Shadow Effect on A Cubic Curve");
-        cubicCurveText2.setFont(new Font(16));
-        cubicCurveText2.setX(1000);
-        cubicCurveText2.setY(140);
+        hLineTo = new HLineTo();
+        hLineTo.setX(400);
+        elements.add(hLineTo);
 
-        nodes.addAll(cubicCurveText, cubicCurve, cubicCurveText2, cubicCurve2);
+        Text rectanglePathText = new Text("Rectangle edge drawn using path objects VLine and HLine");
+        rectanglePathText.setFont(new Font(16));
+        rectanglePathText.setWrappingWidth(250);
+        rectanglePathText.setX(335);
+        rectanglePathText.setY(20);
+
+        nodes.addAll(path, rectanglePathText);
     }
 
     private void crossedLines() {
