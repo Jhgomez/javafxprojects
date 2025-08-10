@@ -176,48 +176,32 @@ public class PathObjects {
      * three points: start point, end point and control point
      */
     private void quadraticCurve() {
-        QuadCurve quadCurve = new QuadCurve();
+        Path path = new Path();
 
-        quadCurve.setStartX(950.0);
-        quadCurve.setStartY(370.0f);
-        quadCurve.setEndX(1350.0f);
-        quadCurve.setEndY(370.0f);
-        quadCurve.setControlX(1100.0f);
-        quadCurve.setControlY(150.0f);
+        //Moving to the starting point
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(20);
+        moveTo.setY(390.0);
 
-        Text quadCurveText = new Text("Quad Curve/Bezier quadrilateral curve");
-        quadCurveText.setFont(new Font(16));
-        quadCurveText.setX(975);
-        quadCurveText.setY(250);
+        //Instantiating the class QuadCurveTo
+        QuadCurveTo quadCurveTo = new QuadCurveTo();
 
-        //Quadrilateral curve with bloom effect
-        QuadCurve quadCurve2 = new QuadCurve();
+        //Setting properties of the class QuadCurve
+        quadCurveTo.setX(420);
+        quadCurveTo.setY(460.0f);
+        quadCurveTo.setControlX(170.0f);
+        quadCurveTo.setControlY(240.0f);
 
-        //Adding properties to the Quad Curve
-        quadCurve2.setStartX(1050.0);
-        quadCurve2.setStartY(500.0f);
-        quadCurve2.setEndX(1250.0f);
-        quadCurve2.setEndY(500.0f);
-        quadCurve2.setControlX(1200.0f);
-        quadCurve2.setControlY(280.0f);
+        //Adding the path elements to Observable list of the Path class
+        path.getElements().add(moveTo);
+        path.getElements().add(quadCurveTo);
 
-        quadCurve2.setFill(Color.RED);
-
-        //Instantiating the Bloom class
-        Bloom bloom = new Bloom();
-
-        //setting threshold for bloom
-        bloom.setThreshold(0.1);
-
-        //Applying bloom effect to quadCurve
-        quadCurve2.setEffect(bloom);
-
-        Text quadCurveText2 = new Text("Quad Curve/Bezier quadrilateral curve with blossom effect");
+        Text quadCurveText2 = new Text("QuadCurveTo path object");
         quadCurveText2.setFont(new Font(16));
-        quadCurveText2.setX(975);
-        quadCurveText2.setY(390);
+        quadCurveText2.setX(20);
+        quadCurveText2.setY(300);
 
-        nodes.addAll(quadCurve, quadCurveText, quadCurve2, quadCurveText2);
+        nodes.addAll(path, quadCurveText2);
     }
 
     /**
