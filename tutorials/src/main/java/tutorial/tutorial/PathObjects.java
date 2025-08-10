@@ -35,9 +35,9 @@ public class PathObjects {
         vLineAndHLine();
         quadraticCurve();
         cubicCurveTo();
-        drawSVGs();
+        arcTo();
 
-        Scene scene = new Scene(group, 1500, 740);
+        Scene scene = new Scene(group, 1050, 540);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -74,34 +74,62 @@ public class PathObjects {
      *
      * In JavaFX we can construct images by parsing SVG paths. Such shapes are represented by the class named SVGPath.
      */
-    private void drawSVGs() {
-        SVGPath triangleSvgPath = new SVGPath();
-        String triagnlePath = "M 100 100 L 300 100 L 200 300 z";
-        //Setting the SVGPath in the form of string
-        triangleSvgPath.setContent(triagnlePath);
-        triangleSvgPath.setLayoutX(885);
-        triangleSvgPath.setLayoutY(420);
+    private void arcTo() {
+        Path path = new Path();
 
-        SVGPath bezierSvgPath = new SVGPath();
+        //Moving to the starting point
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(700.0);
+        moveTo.setY(450.0);
 
-        String bezierPath = "M 70 110 C 70 180, 210 180, 210 110";
+        //Instantiating the arcTo class
+        ArcTo arcTo = new ArcTo();
 
-        //Setting the SVGPath in the form of string
-        bezierSvgPath.setContent(bezierPath);
+        //setting properties of the path element arc
+        arcTo.setX(750.0);
+        arcTo.setY(250.0);
 
-        // Setting the stroke and fill of the path
-        bezierSvgPath.setStroke(Color.BLACK);
-        bezierSvgPath.setFill(Color.ORANGE);
+        arcTo.setRadiusX(50.0);
+        arcTo.setRadiusY(50.0);
 
-        bezierSvgPath.setLayoutX(1150);
-        bezierSvgPath.setLayoutY(420);
+        //Adding the path elements to Observable list of the Path class
+        path.getElements().add(moveTo);
+        path.getElements().add(arcTo);
+        path.setStrokeWidth(6);
+
+        //Creating a path transition
+        PathTransition pathTransition = new PathTransition();
+
+        //Setting the duration of the path transition
+        pathTransition.setDuration(Duration.millis(1500));
+
+        // Drawing a circle
+        Circle circle = new Circle(750, 250, 40.0f);
+
+        //Setting the node
+        pathTransition.setNode(circle);
+
+        //Setting the path
+        pathTransition.setPath(path);
+
+        //Setting the orientation of the path
+        pathTransition.setOrientation(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
+
+        //Setting the cycle count for the transition
+        pathTransition.setCycleCount(PathTransition.INDEFINITE);
+
+        //Setting auto reverse value to true
+        pathTransition.setAutoReverse(true);
+
+        //Playing the animation
+        pathTransition.play();
 
         Text pathText = new Text("SVGs Paths, drawing a triangle and bezier curve using SVG Paths");
         pathText.setFont(new Font(16));
-        pathText.setX(970);
-        pathText.setY(517);
+        pathText.setX(550);
+        pathText.setY(215);
 
-        nodes.addAll(triangleSvgPath, bezierSvgPath, pathText);
+        nodes.addAll(path, circle, pathText);
     }
 
     /**
