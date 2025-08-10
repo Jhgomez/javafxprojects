@@ -1,16 +1,18 @@
 package tutorial.tutorial;
 
+import javafx.animation.PathTransition;
+import javafx.animation.StrokeTransition;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.effect.Bloom;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * To draw complex structures JavaFX provides a class named Path. This class represents the geometrical outline of a shape.
@@ -32,7 +34,7 @@ public class PathObjects {
         crossedLines();
         vLineAndHLine();
         quadraticCurve();
-        drawArc();
+        cubicCurveTo();
         drawSVGs();
 
         Scene scene = new Scene(group, 1500, 740);
@@ -103,70 +105,64 @@ public class PathObjects {
     }
 
     /**
-     * An arc in simple geometry is defined as a portion of a circumference of an ellipse or a circle.
-     * It will have the following properties
-     *  - startAngle − The starting angle of the arc in degrees.
-     *  - length − The angular extent of the arc in degrees.
-     *  - radiusX − The width of the full Ellipse of which the current arc is a part of.
-     *  - radiusY − The height of the full Ellipse of which the current arc is a part of.
-     *
-     *  If both radiusX and radiusY are same, then the arc is a part of a circle circumference.
-     *
-     *  In JavaFX, you can draw three kinds of arcs namely
-     *  - Open − An arc which is not closed at all is known as an open arc.
-     *  - Chord − A chord is a type of an arc which is closed by straight line.
-     *  - Round − The Round arc is an arc which is closed by joining the starting and ending point to the center of the ellipse.
-     *
-     *  You can set the type of the arc using the method setType() by passing any of the following properties − ArcType.OPEN,
-     *  ArcType.CHORD, ArcType.Round.
+     * A Cubic curve is a two dimensional structure that is a type of a Bezier curve. A Bezier curve is defined as a curve
+     * that passes through a set of control points (P0...Pn). It is called a Cubic curve when the number of control points
+     * are 4 (or, if the order of the curve is 3).
      */
-    private void drawArc() {
-        Arc arc = new Arc();
+    private void cubicCurveTo() {
+        Path path = new Path();
 
-        arc.setCenterX(750.0);
-        arc.setCenterY(555.0);
-        arc.setRadiusX(50.0f);
-        arc.setRadiusY(50.0f);
-        arc.setStartAngle(40.0f);
-        arc.setLength(239.0f);
+        //Moving to the starting point
+        MoveTo moveTo = new MoveTo();
+        moveTo.setX(630.0);
+        moveTo.setY(110.0);
 
-        arc.setType(ArcType.ROUND);
-        arc.setStroke(Color.RED);
+        //Instantiating the class CubicCurve
+        CubicCurveTo cubicCurveTo = new CubicCurveTo();
 
-        Arc arc2 = new Arc();
+        //Setting properties of the class CubicCurve
+        cubicCurveTo.setControlX1(930.0f);
+        cubicCurveTo.setControlY1(0.0f);
+        cubicCurveTo.setControlX2(705.0f);
+        cubicCurveTo.setControlY2(210.0f);
+        cubicCurveTo.setX(1030.0f);
+        cubicCurveTo.setY(110.0f);
 
-        arc2.setCenterX(840.0);
-        arc2.setCenterY(555.0);
-        arc2.setRadiusX(50.0f);
-        arc2.setRadiusY(50.0f);
-        arc2.setStartAngle(40.0f);
-        arc2.setLength(239.0f);
+        //creating stroke transition
+        StrokeTransition st = new StrokeTransition();
 
-        arc2.setFill(Color.TRANSPARENT);
-        arc2.setStroke(Color.BLACK);
+        //Setting the duration of the transition
+        st.setDuration(Duration.millis(2000));
 
-        arc2.setType(ArcType.OPEN);
+        //Setting the shape for the transition
+        st.setShape(path);
 
-        Arc arc3 = new Arc();
+        //Setting the fromValue property of the transition (color)
+        st.setFromValue(Color.BLACK);
 
-        arc3.setCenterX(930.0);
-        arc3.setCenterY(555.0);
-        arc3.setRadiusX(50.0f);
-        arc3.setRadiusY(50.0f);
-        arc3.setStartAngle(40.0f);
-        arc3.setLength(239.0f);
+        //Setting the toValue property of the transition (color)
+        st.setToValue(Color.BROWN);
 
-        arc3.setFill(Color.TRANSPARENT);
-        arc3.setStroke(Color.BLACK);
+        //Setting the cycle count for the transition
+        st.setCycleCount(PathTransition.INDEFINITE);
 
-        arc3.setType(ArcType.CHORD);
+        //Setting auto reverse value to true
+        st.setAutoReverse(true);
 
-        Text circleText = new Text("Arcs types, Round, Open and Chord");
-        circleText.setFont(new Font(16));
-        circleText.setX(710);
-        circleText.setY(497.0);
+        //Playing the animation
+        st.play();
 
-        nodes.addAll(arc, arc2, arc3, circleText);
+        //Adding the path elements to Observable list of the Path class
+        path.getElements().add(moveTo);
+        path.getElements().add(cubicCurveTo);
+        path.setStrokeWidth(16);
+
+        Text cubicCurvePathText = new Text("CubicCurveTo Path object");
+        cubicCurvePathText.setFont(new Font(16));
+        cubicCurvePathText.setX(610);
+        cubicCurvePathText.setY(20.0);
+
+        nodes.addAll(path, cubicCurvePathText);
     }
 
     /**
