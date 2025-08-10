@@ -1,6 +1,5 @@
 package tutorial.tutorial;
 
-import javafx.animation.PathTransition;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -12,7 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 public class TwoDShapesWithProperties {
     ObservableList<Node> nodes;
@@ -224,58 +222,5 @@ public class TwoDShapesWithProperties {
         polygon_text.setFont(new Font(16));
 
         nodes.addAll(polygon_text, polygon_triangle1, polygon_triangle2, polygon_triangle3);
-    }
-
-    private void drawAndAnimatePlanetOrbitUsingEllipse() {
-        // ============= Drawing a planet's orbit using an ellipse and animate it =================
-        Ellipse orbit = new Ellipse(500, 250, 150, 100);
-        orbit.setFill(Color.WHITE);
-        orbit.setStroke(Color.BLACK);
-
-        // Drawing a circular planet
-        Circle planet = new Circle(500, 150, 40);
-
-        //Creating the animation
-        PathTransition pathTransition = new PathTransition();
-        pathTransition.setDuration(Duration.millis(2000));
-        pathTransition.setNode(planet);
-        pathTransition.setPath(orbit);
-        pathTransition.setOrientation(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
-        pathTransition.setCycleCount(PathTransition.INDEFINITE);
-        pathTransition.setAutoReverse(false);
-        pathTransition.play();
-
-        nodes.addAll(orbit, planet); // is important to add orbit first so planet is draw on top of it
-    }
-
-    private void drawOlympicsSymbolUsingCircles() {
-        Object[][] olympicsSymbolArray = new Object[][] {
-                {100.0, 275.0, 50.0, Color.BLUE},
-                {175.0, 275.0, 50.0, Color.BLACK},
-                {250.0, 275.0, 50.0, Color.RED},
-                {135.0, 340.0, 50.0, Color.YELLOW},
-                {215.0, 340.0, 50.0, Color.GREEN}
-        };
-
-        for (Object[] o : olympicsSymbolArray) {
-            Circle circle = new Circle((Double) o[0], (Double)o[1], (Double)o[2]);
-            circle.setStroke((Color) o[3]);
-            circle.setFill(Color.WHITE);
-
-            nodes.add(circle);
-        }
-    }
-
-    private void drawRoundedRectangle() {
-        Rectangle rectangle = new Rectangle(50, 20, 250, 180);
-        rectangle.setArcHeight(40);
-        rectangle.setArcWidth(30);
-        rectangle.setFill(Paint.valueOf("#cab2d6"));
-
-        nodes.add(rectangle);
-    }
-
-    private void drawLine() {
-        nodes.add(new Line(10, 100 , 20, 200));
     }
 }
