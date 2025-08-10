@@ -6,7 +6,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.effect.Bloom;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
@@ -27,7 +26,7 @@ public class TwoDShapesWithProperties {
         strokeTypeProperty();
         strokeLineJoinProperty();
         strokeMiterLimitProperty();
-        drawQuadraticCurves();
+        strokeLineCapProperty();
         drawArc();
         drawSVGs();
 
@@ -166,54 +165,44 @@ public class TwoDShapesWithProperties {
     }
 
     /**
-     * Mathematically, a quadratic curve is one that is described by a quadratic function like − y = ax2 + bx + c.
+     * Lines's edges can be structure in a different ways. The ends of a line are also known as end caps/edges. These
+     * end caps are sharp, by default. However, using various properties provided by JavaFX, a user can change the
+     * structure of these end caps. This property is known as Stroke Line Cap Property.
      *
-     * A quadratic curve is a Bezier parametric curve in the XY plane which is a curve of degree 2. It is drawn using
-     * three points: start point, end point and control point
+     * The stroke line cap can be
+     * - Butt − The butt line cap is applied at the end of the lines (StrokeLineCap.BUTT). This one seems to cut the line
+     *          by a few pixels, but will have square edges/caps
+     * - Square − The square line cap is applied at the end of the lines (StrokeLineCap.SQUARE).
+     * - Round − The round line cap is applied at the end of the lines (StrokeLineCap.ROUND).
+     *
+     * Note that this property basically only has effect on a line and no other 2D objects like rectangle or polygon. Also
+     * note that "setFill" property doesn't apply to line objects
      */
-    private void drawQuadraticCurves() {
-        QuadCurve quadCurve = new QuadCurve();
+    private void strokeLineCapProperty() {
+        Line line = new Line(800, 50.0, 1000, 50);
 
-        quadCurve.setStartX(950.0);
-        quadCurve.setStartY(370.0f);
-        quadCurve.setEndX(1350.0f);
-        quadCurve.setEndY(370.0f);
-        quadCurve.setControlX(1100.0f);
-        quadCurve.setControlY(150.0f);
+        line.setStroke(Color.GREEN);
+        line.setStrokeWidth(16);
+        line.setStrokeLineCap(StrokeLineCap.BUTT);
 
-        Text quadCurveText = new Text("Quad Curve/Bezier quadrilateral curve");
-        quadCurveText.setFont(new Font(16));
-        quadCurveText.setX(975);
-        quadCurveText.setY(250);
+        Line line1 = new Line(800, 75.0, 1000, 75.0);
 
-        //Quadrilateral curve with bloom effect
-        QuadCurve quadCurve2 = new QuadCurve();
+        line1.setStroke(Color.YELLOW);
+        line1.setStrokeWidth(16);
+        line1.setStrokeLineCap(StrokeLineCap.SQUARE);
 
-        //Adding properties to the Quad Curve
-        quadCurve2.setStartX(1050.0);
-        quadCurve2.setStartY(500.0f);
-        quadCurve2.setEndX(1250.0f);
-        quadCurve2.setEndY(500.0f);
-        quadCurve2.setControlX(1200.0f);
-        quadCurve2.setControlY(280.0f);
+        Line line2 = new Line(800, 100.0, 1000, 100.0);
 
-        quadCurve2.setFill(Color.RED);
+        line2.setStroke(Color.BLUE);
+        line2.setStrokeWidth(16);
+        line2.setStrokeLineCap(StrokeLineCap.ROUND);
 
-        //Instantiating the Bloom class
-        Bloom bloom = new Bloom();
-
-        //setting threshold for bloom
-        bloom.setThreshold(0.1);
-
-        //Applying bloom effect to quadCurve
-        quadCurve2.setEffect(bloom);
-
-        Text quadCurveText2 = new Text("Quad Curve/Bezier quadrilateral curve with blossom effect");
+        Text quadCurveText2 = new Text("Lines with stroke line cap, Butt, Square, Round");
         quadCurveText2.setFont(new Font(16));
-        quadCurveText2.setX(975);
-        quadCurveText2.setY(390);
+        quadCurveText2.setX(780);
+        quadCurveText2.setY(20);
 
-        nodes.addAll(quadCurve, quadCurveText, quadCurve2, quadCurveText2);
+        nodes.addAll(line, line1, line2,quadCurveText2);
     }
 
     /**
