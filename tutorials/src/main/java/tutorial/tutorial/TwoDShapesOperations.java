@@ -11,8 +11,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.awt.geom.Ellipse2D;
-
 /**
  * A 2D shape is defined as any figure that can be displayed on a two-dimensional plane.
  *
@@ -35,9 +33,9 @@ public class TwoDShapesOperations {
 
         unionOperation();
         intersectionOperation();
-        drawSVGs();
+        substractionOperation();
 
-        Scene scene = new Scene(group, 1500, 740);
+        Scene scene = new Scene(group, 1025, 640);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -57,30 +55,18 @@ public class TwoDShapesOperations {
     }
 
     /**
-     * SVG (Scalable Vector Graphics) is an XML based language to define vector based graphics. The <path> element in
-     * the SVG library is the most powerful while drawing basic shapes. Using paths, you can draw lines, curves, arcs,
-     * and also various complex shapes including them.
-     *
-     * Even though a path is similar to the polyline element while creating complex shapes, the scale of complex shapes
-     * drawn using a polyline element is not larger than shapes drawn using path element.
-     *
-     * A path in SVG is defined by only one parameter. This parameter holds series of commands, like line, curve or arc
-     * commands. And each of these commands are instantiated using a single letter; for example, the letter 'M' calls the
-     * "Move To" command, the letter 'L' calls the "line" command and 'C' calls "Curve" command. And these letters can
-     * either be specified as either a lowercase or an uppercase letter. The lowercase letter specifies relative
-     * coordinates, while the uppercase letter specifies absolute coordinates.
-     *
-     * The same concept of SVGPath is adopted by JavaFX, in order to create objects.
-     *
-     * In JavaFX we can construct images by parsing SVG paths. Such shapes are represented by the class named SVGPath.
+     * Returns the area of the first shape excluding the area overlapped by the second one
      */
-    private void drawSVGs() {
+    private void substractionOperation() {
+        Circle circle = new Circle(165, 332, 150);
+        circle.setFill(Color.GREEN);
+
         SVGPath triangleSvgPath = new SVGPath();
         String triagnlePath = "M 100 100 L 300 100 L 200 300 z";
         //Setting the SVGPath in the form of string
         triangleSvgPath.setContent(triagnlePath);
-        triangleSvgPath.setLayoutX(885);
-        triangleSvgPath.setLayoutY(420);
+        triangleSvgPath.setLayoutX(-39);
+        triangleSvgPath.setLayoutY(155);
 
         SVGPath bezierSvgPath = new SVGPath();
 
@@ -91,17 +77,22 @@ public class TwoDShapesOperations {
 
         // Setting the stroke and fill of the path
         bezierSvgPath.setStroke(Color.BLACK);
-        bezierSvgPath.setFill(Color.ORANGE);
+        bezierSvgPath.setFill(Color.YELLOW);
+        bezierSvgPath.setLayoutX(21);
+        bezierSvgPath.setLayoutY(154);
 
-        bezierSvgPath.setLayoutX(1150);
-        bezierSvgPath.setLayoutY(420);
+        Shape subtractionShapeResult = Shape.subtract(circle, Shape.subtract(triangleSvgPath, bezierSvgPath));
+        subtractionShapeResult.setLayoutX(270);
+        subtractionShapeResult.setLayoutY(150);
 
-        Text pathText = new Text("SVGs Paths, drawing a triangle and bezier curve using SVG Paths");
+
+        Text pathText = new Text("Same situation, individual objects, then shape result of substraction between triangle and bezier and result is subtracted from circle");
+        pathText.setWrappingWidth(450);
         pathText.setFont(new Font(16));
-        pathText.setX(970);
-        pathText.setY(517);
+        pathText.setX(20);
+        pathText.setY(135);
 
-        nodes.addAll(triangleSvgPath, bezierSvgPath, pathText);
+        nodes.addAll(circle, triangleSvgPath, bezierSvgPath, subtractionShapeResult, pathText);
     }
 
     /**

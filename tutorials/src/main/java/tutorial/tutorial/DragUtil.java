@@ -28,5 +28,25 @@ public class DragUtil {
                 node.setLayoutY(newY);
             }
         });
+
+//        node.setOnMouseDragReleased(event -> {
+//            System.out.println("Layout X: " + node.getLayoutX());
+//            System.out.println("Layout Y: " + node.getLayoutY());
+//        });
+//
+//        node.setOnMouseReleased(event -> {
+//            System.out.println("Layout X: " + node.getLayoutX());
+//            System.out.println("Layout Y: " + node.getLayoutY());
+//        });
+//
+//        node.setOnMouseExited(event -> {
+//            System.out.println("Layout X: " + node.getLayoutX());
+//            System.out.println("Layout Y: " + node.getLayoutY());
+//        });
+//
+//        node.setOnMouseDragExited(event -> {
+//            System.out.println("Layout X: " + node.getLayoutX());
+//            System.out.println("Layout Y: " + node.getLayoutY());
+//        });
     }
 }
