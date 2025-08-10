@@ -11,6 +11,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.awt.geom.Ellipse2D;
+
 /**
  * A 2D shape is defined as any figure that can be displayed on a two-dimensional plane.
  *
@@ -32,7 +34,7 @@ public class TwoDShapesOperations {
         nodes = group.getChildren();
 
         unionOperation();
-        drawArc();
+        intersectionOperation();
         drawSVGs();
 
         Scene scene = new Scene(group, 1500, 740);
@@ -103,70 +105,26 @@ public class TwoDShapesOperations {
     }
 
     /**
-     * An arc in simple geometry is defined as a portion of a circumference of an ellipse or a circle.
-     * It will have the following properties
-     *  - startAngle − The starting angle of the arc in degrees.
-     *  - length − The angular extent of the arc in degrees.
-     *  - radiusX − The width of the full Ellipse of which the current arc is a part of.
-     *  - radiusY − The height of the full Ellipse of which the current arc is a part of.
-     *
-     *  If both radiusX and radiusY are same, then the arc is a part of a circle circumference.
-     *
-     *  In JavaFX, you can draw three kinds of arcs namely
-     *  - Open − An arc which is not closed at all is known as an open arc.
-     *  - Chord − A chord is a type of an arc which is closed by straight line.
-     *  - Round − The Round arc is an arc which is closed by joining the starting and ending point to the center of the ellipse.
-     *
-     *  You can set the type of the arc using the method setType() by passing any of the following properties − ArcType.OPEN,
-     *  ArcType.CHORD, ArcType.Round.
+     * The areas of two or more shapes are intersected together and the common area of these shapes is obtained as a result.
      */
-    private void drawArc() {
-        Arc arc = new Arc();
+    private void intersectionOperation() {
+        Circle circle = new Circle(650, 200, 150);
+        circle.setFill(Color.GREEN);
 
-        arc.setCenterX(750.0);
-        arc.setCenterY(555.0);
-        arc.setRadiusX(50.0f);
-        arc.setRadiusY(50.0f);
-        arc.setStartAngle(40.0f);
-        arc.setLength(239.0f);
+        Rectangle rectangle = new Rectangle(500, 60, 200, 75);
+        rectangle.setFill(Color.BROWN);
 
-        arc.setType(ArcType.ROUND);
-        arc.setStroke(Color.RED);
-
-        Arc arc2 = new Arc();
-
-        arc2.setCenterX(840.0);
-        arc2.setCenterY(555.0);
-        arc2.setRadiusX(50.0f);
-        arc2.setRadiusY(50.0f);
-        arc2.setStartAngle(40.0f);
-        arc2.setLength(239.0f);
-
-        arc2.setFill(Color.TRANSPARENT);
-        arc2.setStroke(Color.BLACK);
-
-        arc2.setType(ArcType.OPEN);
-
-        Arc arc3 = new Arc();
-
-        arc3.setCenterX(930.0);
-        arc3.setCenterY(555.0);
-        arc3.setRadiusX(50.0f);
-        arc3.setRadiusY(50.0f);
-        arc3.setStartAngle(40.0f);
-        arc3.setLength(239.0f);
-
-        arc3.setFill(Color.TRANSPARENT);
-        arc3.setStroke(Color.BLACK);
-
-        arc3.setType(ArcType.CHORD);
-
-        Text circleText = new Text("Arcs types, Round, Open and Chord");
+        Text circleText = new Text("Same situation, individual objects, then shape obtained from intersection operation");
+        circleText.setWrappingWidth(450);
         circleText.setFont(new Font(16));
-        circleText.setX(710);
-        circleText.setY(497.0);
+        circleText.setX(530);
+        circleText.setY(20.0);
 
-        nodes.addAll(arc, arc2, arc3, circleText);
+        Shape intersectionShape = Shape.intersect(circle, rectangle);
+        intersectionShape.setFill(Color.VIOLET);
+        intersectionShape.setLayoutX(300);
+
+        nodes.addAll(circle, rectangle, intersectionShape, circleText);
     }
 
     /**
