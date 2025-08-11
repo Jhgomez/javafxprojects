@@ -5,9 +5,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.paint.Paint;
+import javafx.scene.paint.*;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -40,6 +38,7 @@ public class ColorsAndTextures {
 
         uniformColorInTextAndShape();
         imagePatternColoring();
+        linearGradient();
 
         Scene scene = new Scene(group, 1500, 740);
 
@@ -61,6 +60,66 @@ public class ColorsAndTextures {
     }
 
     /**
+     * A color gradient, in color science, is defined as the progression of colors depending on their positions. Hence,
+     * a color gradient is also known as color ramp or color progression.
+     *
+     * in a linear gradient pattern, the colors are flowing in a single direction. Even if the shape to be coloured is
+     * not linear, like a circle or an ellipse, the colors would still be arranged in one direction.
+     */
+    private void linearGradient() {
+        Circle circle = new Circle();
+
+        //Setting the properties of the circle
+        circle.setCenterX(85.0f);
+        circle.setCenterY(390.0f);
+        circle.setRadius(75.0f);
+
+        //Drawing a text
+        Text text = new Text("Linear Gradient");
+
+        //Setting the font of the text
+        text.setFont(Font.font("Edwardian Script ITC", 55));
+
+        //Setting the position of the text
+        text.setX(20);
+        text.setY(300);
+
+        //Setting the linear gradient
+        Stop[] stops = new Stop[] {
+                new Stop(0, Color.DARKSLATEBLUE),
+                new Stop(1, Color.DARKRED)
+        };
+
+        LinearGradient linearGradient =
+                new LinearGradient(10, 315, 160, 465, false, CycleMethod.NO_CYCLE, stops);
+
+//        LinearGradient linearGradient =
+//                new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE, stops);
+
+        //Setting the linear gradient to the circle and text
+        circle.setFill(linearGradient);
+        text.setFill(linearGradient);
+
+        nodes.addAll(circle, text);
+        //====================== TRIANGLE =============================================
+        Polygon triangle = new Polygon();
+
+        triangle.getPoints().addAll(
+                90.0, 500.0,
+                160.0, 600.0,
+                90.0, 700.0
+        );
+
+        linearGradient =
+                new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE, stops);
+
+
+        triangle.setFill(linearGradient);
+
+        nodes.add(triangle);
+    }
+
+    /**
      * We use the class "ImagePattern" it accepts the following parameters
      *
      * - Image − The object of the image using which you want to create the pattern.
@@ -73,7 +132,7 @@ public class ColorsAndTextures {
 
         //Setting the properties of the circle
         circle.setCenterX(680.0f);
-        circle.setCenterY(10.0f);
+        circle.setCenterY(150.0f);
         circle.setRadius(75.0f);
 
         //Setting the image pattern
