@@ -4,7 +4,9 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
@@ -37,6 +39,7 @@ public class ColorsAndTextures {
         nodes = group.getChildren();
 
         uniformColorInTextAndShape();
+        imagePatternColoring();
 
         Scene scene = new Scene(group, 1500, 740);
 
@@ -57,8 +60,56 @@ public class ColorsAndTextures {
         stage.setOnCloseRequest(e -> runnable.run());
     }
 
+    /**
+     * We use the class "ImagePattern" it accepts the following parameters
+     *
+     * - Image − The object of the image using which you want to create the pattern.
+     * - x and y − Double variables representing the (x, y) coordinates of origin of the anchor rectangle.
+     * - height and width − Double variables representing the height and width of the image that is used to create a pattern.
+     * - isProportional − This is a Boolean Variable; on setting this property to true, the start and end locations are set to be proportional.
+     */
+    private void imagePatternColoring() {
+        Circle circle = new Circle();
+
+        //Setting the properties of the circle
+        circle.setCenterX(680.0f);
+        circle.setCenterY(10.0f);
+        circle.setRadius(75.0f);
+
+        //Setting the image pattern
+        String link = "https://www.101convert.com/img/app-icon/64/12605.png";
+
+        Image image = new Image(link);
+        ImagePattern imagePattern = new ImagePattern(image, 20, 20, 40, 40, false);
+
+        //Setting color to the circle
+        circle.setFill(imagePattern);
+
+        //Setting the stroke width
+        circle.setStrokeWidth(3);
+
+        //Setting color to the stroke
+        circle.setStroke(Color.DARKSLATEBLUE);
+
+        //Drawing a text
+        Text text = new Text("Image Pattern Coloring");
+
+        //Setting the font of the text
+        text.setFont(Font.font("Edwardian Script ITC", 82));
+
+        //Setting the position of the text
+        text.setX(400);
+        text.setY(64);
+
+        //Setting color to the text
+        text.setFill(imagePattern);
+        text.setStrokeWidth(1);
+        text.setStroke(Color.DARKSLATEBLUE);
+
+        nodes.addAll(text, circle);
+    }
+
     private void uniformColorInTextAndShape() {
-        //Drawing a Circle
         Circle circle = new Circle();
 
         //Setting the properties of the circle
