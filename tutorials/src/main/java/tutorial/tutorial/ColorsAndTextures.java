@@ -39,8 +39,9 @@ public class ColorsAndTextures {
         uniformColorInTextAndShape();
         imagePatternColoring();
         linearGradient();
+        radialGradient();
 
-        Scene scene = new Scene(group, 1500, 740);
+        Scene scene = new Scene(group, 1050, 730);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -60,11 +61,80 @@ public class ColorsAndTextures {
     }
 
     /**
+     * The other types of gradient patterns are Radial, Angular, Reflected, Diamond gradient patterns. Here we will learn
+     * about the Radial Gradient Pattern.
+     *
+     * The Radial Gradient Pattern starts from a center point and flows in a circular manner up to a radius. Simply put,
+     * the radial gradient contains two or more color stops in the form of concentric circles.
+     *
+     * Parameters
+     * - startX, startY − These double properties represent the x and y coordinates of the starting point of the gradient.
+     * - endX, endY − These double properties represent the x and y coordinates of the ending point of the gradient.
+     * - cycleMethod − This argument defines how the regions outside the color gradient bounds are defined by the starting
+     *                 and ending points and how they should be filled.
+     * - proportional − This is a Boolean Variable; on setting this property to true the start and end locations are set
+     *                  to a proportion.
+     * - Stops − This argument defines the color-stop points along the gradient line.
+     *
+     * Radial Gradient Pattern does not work with shapes that are non-circular; i.e., you can only apply radial gradient
+     * on circular and elliptical shapes.
+     */
+    private void radialGradient() {
+        Circle circle = new Circle();
+
+        //Setting the properties of the circle
+        circle.setCenterX(500.0f);
+        circle.setCenterY(390.0f);
+        circle.setRadius(75.0f);
+
+        //Drawing a text
+        Text text = new Text("Radial Gradient");
+
+        //Setting the font of the text
+        text.setFont(Font.font("Edwardian Script ITC", 50));
+
+        //Setting the position of the text
+        text.setX(410);
+        text.setY(290);
+
+        //Setting the radial gradient
+        Stop[] stops = new Stop[] {
+                new Stop(0.0, Color.WHITE),
+                new Stop(0.3, Color.RED),
+                new Stop(1.0, Color.DARKRED)
+        };
+        RadialGradient radialGradient =
+                new RadialGradient(
+                        0,
+                        0,
+                        500,
+                        390,
+                        60,
+                        false,
+                        CycleMethod.NO_CYCLE,
+                        stops
+                );
+
+        //Setting the radial gradient to the circle and text
+        circle.setFill(radialGradient);
+        text.setFill(radialGradient);
+
+        nodes.addAll(circle, text);
+    }
+
+    /**
      * A color gradient, in color science, is defined as the progression of colors depending on their positions. Hence,
      * a color gradient is also known as color ramp or color progression.
      *
      * in a linear gradient pattern, the colors are flowing in a single direction. Even if the shape to be coloured is
      * not linear, like a circle or an ellipse, the colors would still be arranged in one direction.
+     *
+     * Parameters
+     * - startX, startY − These double properties represent the x and y coordinates of the starting point of the gradient.
+     * - endX, endY − These double properties represent the x and y coordinates of the ending point of the gradient.
+     * - cycleMethod − This argument defines how the regions outside the color gradient bounds, defined by the starting and ending points, should be filled.
+     * - proportional − This is a Boolean Variable; on setting this property to true, the start and end locations are set to a proportion.
+     * - Stops − This argument defines the color-stop points along the gradient line.
      */
     private void linearGradient() {
         Circle circle = new Circle();
