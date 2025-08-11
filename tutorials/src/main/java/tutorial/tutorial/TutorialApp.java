@@ -19,6 +19,7 @@ public class TutorialApp extends Application {
         Button _2DShapesOperations =  new Button("Operations on 2D Shapes");
         Button pathObjects =  new Button("Path Objects");
         Button colorsAndTextures =  new Button("Color And Textures");
+        Button effects = new Button("Effects");
 
         Runnable runnable = stage::show;
 
@@ -47,13 +48,19 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        effects.setOnAction(e -> {
+            new Effects().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox root = new VBox(
                 16.0,
                 _2DShapes,
                 _2DShapesProperties,
                 _2DShapesOperations,
                 pathObjects,
-                colorsAndTextures
+                colorsAndTextures,
+                effects
         );
 
         root.setAlignment(Pos.CENTER);

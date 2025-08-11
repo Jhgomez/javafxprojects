@@ -16,6 +16,8 @@ public class DragUtil {
                 clickSceneX = event.getSceneX();
                 currentY = node.getLayoutY();
                 clickSceneY = event.getSceneY();
+
+                node.toFront();
             }
         });
 

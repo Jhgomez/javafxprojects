@@ -1,0 +1,156 @@
+package tutorial.tutorial;
+
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Glow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.*;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
+
+import java.util.Objects;
+
+/**
+ * In JavaFX, you can set various effects to a node such as bloom, blur and glow. These classes are available in a package
+ * named javafx.scene.effect.
+ */
+public class Effects {
+    ObservableList<Node> nodes;
+    Image image = new Image(Objects.requireNonNull(getClass().getResource("tree.png")).toExternalForm());
+
+    public void displayScreen(Runnable runnable) {
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setStyle("-fx-background: orange; -fx-background-color: orange;");
+        Pane pane = new Pane();
+
+        scrollPane.setContent(pane);
+
+        nodes = pane.getChildren();
+
+        // original picture as a point of comparison
+        ImageView imageView = new ImageView(image);
+
+        imageView.setX(15);
+        imageView.setY(30);
+
+        imageView.setFitHeight(200);
+        imageView.setFitWidth(400);
+        imageView.setPreserveRatio(true);
+
+        Text text = new Text("Original Picture");
+        text.setFont(Font.font(16));
+        text.setX(20);
+        text.setY(20);
+
+        nodes.addAll(imageView,text);
+//        glowEffect();
+        adjustColor();
+
+        Scene scene = new Scene(scrollPane, 1050, 730);
+
+        scene.setFill(Paint.valueOf("#fdbf6f"));
+
+        Stage stage = new Stage();
+
+        stage.setTitle("2D Shapes");
+        stage.setScene(scene);
+        stage.sizeToScene();
+
+        for (Node node : nodes) {
+            DragUtil.setDraggable(node);
+        }
+
+        stage.show();
+
+        stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * You can adjust the color of an image by applying the color adjust effect to it. This includes the adjustment of
+     * the Hue, Saturation, Brightness and Contrast on each pixel.
+     *
+     * - input − This property is of the Effect type and it represents an input to the color adjust effect.
+     * = brightness − This property is of Double type and it represents the brightness adjustment value for this effect.
+     * - contrast − This property is of Double type and it represents the contrast adjustment value for this effect.
+     * - hue − This property is of Double type and it represents the hue adjustment value for this effect.
+     * - saturation − This property is of Double type and it represents the saturation adjustment value for this effect.
+     */
+    private void adjustColor() {
+        ImageView imageView = new ImageView(image);
+
+        imageView.setX(180);
+        imageView.setY(40);
+
+        imageView.setFitHeight(200);
+        imageView.setFitWidth(400);
+        imageView.setPreserveRatio(true);
+
+        ColorAdjust colorAdjust = new ColorAdjust();
+        colorAdjust.setContrast(0.4);
+        colorAdjust.setHue(-0.05);
+        colorAdjust.setBrightness(0.9);
+        colorAdjust.setSaturation(0.8);
+
+        imageView.setEffect(colorAdjust);
+
+        Text text = new Text("Adjust Color Effect (brightness, saturation, Hue, Contrast)");
+        text.setWrappingWidth(270);
+        text.setFont(Font.font(16));
+        text.setX(180);
+        text.setY(15);
+
+        nodes.addAll(imageView, text);
+    }
+
+    private void glowEffect() {
+
+        //Setting the image view
+        ImageView imageView = new ImageView(image);
+
+        //Setting the position of the image
+        imageView.setX(0);
+        imageView.setY(0);
+
+        //setting the fit height and width of the image view
+        imageView.setFitHeight(100);
+        imageView.setFitWidth(200);
+
+        //Setting the preserve ratio of the image view
+        imageView.setPreserveRatio(true);
+
+        Glow glow = new Glow();
+        //setting the level property
+        glow.setLevel(0.9);
+
+        imageView.setEffect(glow);
+
+        ImageView imageView2 = new ImageView(image);
+        imageView2.setFitHeight(100);
+        imageView2.setFitWidth(200);
+        imageView2.setPreserveRatio(true);
+        imageView2.setX(300);
+        imageView2.setY(20);
+
+        Circle circle = new Circle();
+        circle.setFill(Color.GREEN);
+        circle.setRadius(30);
+        circle.setCenterX(30);
+        circle.setCenterY(150);
+        circle.setEffect(glow);
+
+        Circle circle2 = new Circle();
+        circle2.setFill(Color.GREEN);
+        circle2.setRadius(30);
+        circle2.setCenterX(80);
+        circle2.setCenterY(150);
+
+        nodes.addAll(imageView, imageView2, circle, circle2);
+    }
+}
