@@ -57,6 +57,7 @@ public class Effects {
         imageInput();
         blendEffect();
         bloomEffect();
+        glowEffect();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
 
@@ -75,6 +76,53 @@ public class Effects {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    private void glowEffect() {
+        Text text = new Text("First Image use Bloom, Second Image Use Glow, First circle no effect, second circle glow");
+        text.setWrappingWidth(360);
+        text.setFont(Font.font(16));
+        text.setX(350);
+        text.setY(560);
+
+        nodes.add(text);
+
+        ImageView imageView = new ImageView(image);
+        imageView.setX(350);
+        imageView.setY(600);
+        imageView.setFitHeight(300);
+        imageView.setFitWidth(200);
+        imageView.setPreserveRatio(true);
+
+        Bloom bloom = new Bloom();
+        bloom.setThreshold(0.1);
+        imageView.setEffect(bloom);
+
+        ImageView imageView2 = new ImageView(image);
+        imageView2.setFitHeight(300);
+        imageView2.setFitWidth(200);
+        imageView2.setPreserveRatio(true);
+        imageView2.setX(565);
+        imageView2.setY(600);
+
+        Glow glow = new Glow();
+        glow.setLevel(0.9);
+        imageView2.setEffect(glow);
+
+        Circle circle = new Circle();
+        circle.setFill(Color.GREEN);
+        circle.setRadius(30);
+        circle.setCenterX(520);
+        circle.setCenterY(910);
+
+        Circle circle2 = new Circle();
+        circle2.setFill(Color.GREEN);
+        circle2.setRadius(30);
+        circle2.setCenterX(610);
+        circle2.setCenterY(910);
+        circle2.setEffect(glow);
+
+        nodes.addAll(imageView, imageView2, circle, circle2);
     }
 
     private void bloomEffect() {
@@ -332,50 +380,5 @@ public class Effects {
         text.setY(15);
 
         nodes.addAll(imageView, text);
-    }
-
-    private void glowEffect() {
-
-        //Setting the image view
-        ImageView imageView = new ImageView(image);
-
-        //Setting the position of the image
-        imageView.setX(0);
-        imageView.setY(0);
-
-        //setting the fit height and width of the image view
-        imageView.setFitHeight(100);
-        imageView.setFitWidth(200);
-
-        //Setting the preserve ratio of the image view
-        imageView.setPreserveRatio(true);
-
-        Glow glow = new Glow();
-        //setting the level property
-        glow.setLevel(0.9);
-
-        imageView.setEffect(glow);
-
-        ImageView imageView2 = new ImageView(image);
-        imageView2.setFitHeight(100);
-        imageView2.setFitWidth(200);
-        imageView2.setPreserveRatio(true);
-        imageView2.setX(300);
-        imageView2.setY(20);
-
-        Circle circle = new Circle();
-        circle.setFill(Color.GREEN);
-        circle.setRadius(30);
-        circle.setCenterX(30);
-        circle.setCenterY(150);
-        circle.setEffect(glow);
-
-        Circle circle2 = new Circle();
-        circle2.setFill(Color.GREEN);
-        circle2.setRadius(30);
-        circle2.setCenterX(80);
-        circle2.setCenterY(150);
-
-        nodes.addAll(imageView, imageView2, circle, circle2);
     }
 }
