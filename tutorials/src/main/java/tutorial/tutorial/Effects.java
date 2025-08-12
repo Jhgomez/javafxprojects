@@ -5,12 +5,15 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.ColorInput;
 import javafx.scene.effect.Glow;
+import javafx.scene.effect.ImageInput;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -52,6 +55,8 @@ public class Effects {
         nodes.addAll(imageView,text);
 //        glowEffect();
         adjustColor();
+        colorInput();
+        imageInput();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
 
@@ -70,6 +75,61 @@ public class Effects {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * Embeds an image to the JavaFX screen. Just like in the Color Input effect, it is
+     * used to pass the specified colored rectangular region as an input to another effect. An Image Input effect is used
+     * to pass the specified image as an input to another effect.
+     *
+     * On applying this effect, the image specified will not be modified. This effect is applied to any node.
+     */
+    private void imageInput() {
+        Rectangle rectangle = new Rectangle();
+
+        Image image = new Image(Objects.requireNonNull(Effects.class.getResource("tree2.png")).toExternalForm());
+
+        ImageInput imageInput = new ImageInput();
+        imageInput.setX(540);
+        imageInput.setY(40);
+        imageInput.setSource(image);
+
+        rectangle.setEffect(imageInput);
+
+        Text text = new Text("Image Input Effect");
+        text.setFont(Font.font(16));
+        text.setX(575);
+        text.setY(20);
+
+        nodes.addAll(rectangle,text);
+    }
+
+    /**
+     * Color Input Effect gives the same output as drawing a rectangle and filling it with color. Unlike other effects,
+     * if this effect is applied to any node, it displays only a rectangular box (not the node). This effect is mostly
+     * used to pass as an input for other effects.
+     *
+     * For example, while applying the blend effect, it requires an object of effect type as input. There we can pass this
+     * as an input.
+     */
+    private void colorInput() {
+        Rectangle rectangle = new Rectangle();
+
+        ColorInput colorInput = new ColorInput();
+        colorInput.setX(410);
+        colorInput.setY(50);
+        colorInput.setHeight(40);
+        colorInput.setWidth(70);
+        colorInput.setPaint(Color.CHOCOLATE);
+
+        rectangle.setEffect(colorInput);
+
+        Text text = new Text("Color Input Effect");
+        text.setFont(Font.font(16));
+        text.setX(415);
+        text.setY(20);
+
+        nodes.addAll(rectangle, text);
     }
 
     /**
