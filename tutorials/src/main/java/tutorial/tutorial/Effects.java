@@ -12,6 +12,7 @@ import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
@@ -55,6 +56,7 @@ public class Effects {
         colorInput();
         imageInput();
         blendEffect();
+        bloomEffect();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
 
@@ -73,6 +75,58 @@ public class Effects {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    private void bloomEffect() {
+        Text text = new Text("Same Text with Bloom applied and without Bloom(no effect)");
+        text.setFont(Font.font(16));
+        text.setX(315);
+        text.setY(365);
+
+        nodes.add(text);
+
+        text = new Text("JavaFX Tutorial App");
+
+        //Setting font to the text
+        text.setFont(Font.font(null, FontWeight.BOLD, 40));
+
+        text.setX(335);
+        text.setY(420);
+
+        text.setFill(Color.DARKSEAGREEN);
+
+        Rectangle rectangle = new Rectangle();
+
+        rectangle.setX(340.0f);
+        rectangle.setY(380.0f);
+        rectangle.setWidth(380.0f);
+        rectangle.setHeight(60.0f);
+        rectangle.setFill(Color.TEAL);
+
+        Bloom bloom = new Bloom();
+        bloom.setThreshold(0.1);
+        text.setEffect(bloom);
+
+        nodes.addAll(rectangle, text);
+
+        text = new Text("JavaFX Tutorial App");
+
+        text.setFont(Font.font(null, FontWeight.BOLD, 40));
+
+        text.setX(335);
+        text.setY(500);
+
+        text.setFill(Color.DARKSEAGREEN);
+
+        rectangle = new Rectangle();
+
+        rectangle.setX(340.0f);
+        rectangle.setY(460.0f);
+        rectangle.setWidth(380.0f);
+        rectangle.setHeight(60.0f);
+        rectangle.setFill(Color.TEAL);
+
+        nodes.addAll(rectangle, text);
     }
 
     /**
