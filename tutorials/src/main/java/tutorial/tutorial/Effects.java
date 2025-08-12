@@ -94,6 +94,8 @@ public class Effects {
         imageView.setFitWidth(200);
         imageView.setPreserveRatio(true);
 
+        imageView.setId("firstImage");
+
         Bloom bloom = new Bloom();
         bloom.setThreshold(0.1);
         imageView.setEffect(bloom);
@@ -104,6 +106,8 @@ public class Effects {
         imageView2.setPreserveRatio(true);
         imageView2.setX(565);
         imageView2.setY(600);
+
+        imageView2.setId("secondImage");
 
         Glow glow = new Glow();
         glow.setLevel(0.9);
@@ -155,6 +159,8 @@ public class Effects {
         bloom.setThreshold(0.1);
         text.setEffect(bloom);
 
+        text.setId("firstText");
+
         nodes.addAll(rectangle, text);
 
         text = new Text("JavaFX Tutorial App");
@@ -163,6 +169,8 @@ public class Effects {
 
         text.setX(335);
         text.setY(500);
+
+        text.setId("secondText");
 
         text.setFill(Color.DARKSEAGREEN);
 
