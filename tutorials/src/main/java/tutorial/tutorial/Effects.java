@@ -4,10 +4,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.ColorInput;
-import javafx.scene.effect.Glow;
-import javafx.scene.effect.ImageInput;
+import javafx.scene.effect.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -57,6 +54,7 @@ public class Effects {
         adjustColor();
         colorInput();
         imageInput();
+        blendEffect();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
 
@@ -75,6 +73,119 @@ public class Effects {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * - bottomInput − This property is of the type Effect and it represents the bottom input to the blend effect.
+     * - topInput − This property is of the type Effect and it represents the top input to the blend effect.
+     * - opacity − This property is of double type and it represents the opacity value modulated with the top input.
+     * - mode − This property is of the type BlendMode and it represents the mode used to blend the two inputs together.
+     */
+    private void blendEffect() {
+        Text text = new Text("Blend Effect, both with top input(effect to blend is on top) not bottom input, first column uses ColorInput effect, second uses ColorAdjust");
+        text.setFont(Font.font(16));
+        text.setWrappingWidth(350);
+        text.setX(20);
+        text.setY(290);
+
+        nodes.add(text);
+
+        BlendMode[] blendModes = {
+                BlendMode.ADD,
+                BlendMode.MULTIPLY,
+                BlendMode.OVERLAY,
+                BlendMode.DIFFERENCE,
+                BlendMode.RED,
+                BlendMode.BLUE,
+                BlendMode.GREEN,
+                BlendMode.EXCLUSION,
+                BlendMode.COLOR_BURN,
+                BlendMode.COLOR_DODGE,
+                BlendMode.LIGHTEN,
+                BlendMode.DARKEN,
+                BlendMode.SCREEN,
+                BlendMode.HARD_LIGHT,
+                BlendMode.SOFT_LIGHT,
+                BlendMode.SRC_ATOP,
+                BlendMode.SRC_OVER
+        };
+
+        int centerX = 120;
+        int centerY = 380;
+        int radius = 30;
+        int colorInputX = 85;
+        int colorInputY = 345;
+
+        for (int i =  1; i <= 2; i++) {
+            Effect input = null;
+
+            if (i == 2) {
+               input = new ColorAdjust(0.4, -0.05, 0.9, 0.8);
+               centerX = 195;
+               centerY = 380;
+               colorInputX = 160;
+               colorInputY = 345;
+            }
+
+            for (BlendMode blendMode : blendModes) {
+                Text blendColorText = new Text(blendMode.name());
+                blendColorText.setX(20);
+                blendColorText.setY(centerY);
+
+                Circle blendColorInput = new Circle();
+                blendColorInput.setCenterX(centerX);
+                blendColorInput.setCenterY(centerY);
+                blendColorInput.setRadius(radius);
+                blendColorInput.setFill(Color.RED);
+
+                if (i == 1) {
+                    input = new ColorInput(colorInputX, colorInputY, 75, 40, Color.GRAY);
+                }
+
+                Blend blend = new Blend();
+                blend.setTopInput(input);
+//                blend.setBottomInput(input);
+                blend.setMode(blendMode);
+
+                blendColorInput.setEffect(blend);
+
+                centerY += radius + 35;
+                colorInputY += radius + 35;
+
+                nodes.addAll(blendColorInput, blendColorText);
+            }
+        }
+
+//        Circle blendColorInput = new Circle();
+//        blendColorInput.setCenterX(50.0f);
+//        blendColorInput.setCenterY(320.0f);
+//        blendColorInput.setRadius(30.0f);
+//
+//        //Setting the fill color of the circle
+//        blendColorInput.setFill(Color.RED);
+//
+//        //Instantiating the blend class
+//        Blend blend = new Blend();
+//
+//        //Preparing the to input object
+//        ColorInput topInput = new ColorInput(15, 285, 75, 40, Color.GRAY);
+//
+//        //setting the top input to the blend object
+////        blend.setBottomInput(topInput);
+//        blend.setTopInput(topInput);
+//
+//        //setting the blend mode
+//        blend.setMode(BlendMode.SOFT_LIGHT);
+//
+//        //Applying the blend effect to circle
+//        blendColorInput.setEffect(blend);
+//
+//        Text text = new Text("Blend Effect");
+//        text.setFont(Font.font(16));
+//        text.setX(740);
+//        text.setY(20);
+
+//        nodes.addAll(text, blendColorInput);
     }
 
     /**
