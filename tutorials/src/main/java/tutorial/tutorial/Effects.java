@@ -353,6 +353,16 @@ public class Effects {
             return dropShadow;
         });
 
+        //  creates a shadow inside the edges of the node
+        effects.put("Inner Shadow", () -> {
+            InnerShadow innerShadow = new InnerShadow();
+            innerShadow.setOffsetX(4);
+            innerShadow.setOffsetY(4);
+            innerShadow.setColor(Color.GRAY);
+
+            return innerShadow;
+        });
+
         return effects;
     }
 
