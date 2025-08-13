@@ -172,11 +172,21 @@ public class Effects {
         imageView.setFitWidth(200);
         imageView.setPreserveRatio(true);
 
-        imageView.setId("firstImage");
+        ComboBox<String> leftImageComboBox = new ComboBox<>(options);
+        leftImageComboBox.setPromptText("Left Image Effect");
 
-        Bloom bloom = new Bloom();
-        bloom.setThreshold(0.1);
-        imageView.setEffect(bloom);
+        leftImageComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                imageView.setEffect(effects.get(newVal).get());
+            } else {
+                imageView.setEffect(null);
+            }
+        });
+
+        leftImageComboBox.setLayoutX(780);
+        leftImageComboBox.setLayoutY(600);
+
+        nodes.addAll(imageView, leftImageComboBox);
 
         ImageView imageView2 = new ImageView(image);
         imageView2.setFitHeight(300);
@@ -185,11 +195,21 @@ public class Effects {
         imageView2.setX(565);
         imageView2.setY(600);
 
-        imageView2.setId("secondImage");
+        ComboBox<String> rightImageComboBox = new ComboBox<>(options);
+        rightImageComboBox.setPromptText("Right Image Effect");
 
-        Glow glow = new Glow();
-        glow.setLevel(0.9);
-        imageView2.setEffect(glow);
+        rightImageComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                imageView2.setEffect(effects.get(newVal).get());
+            } else {
+                imageView2.setEffect(null);
+            }
+        });
+
+        rightImageComboBox.setLayoutX(780);
+        rightImageComboBox.setLayoutY(635);
+
+        nodes.addAll(imageView2, rightImageComboBox);
 
         Circle circle = new Circle();
         circle.setFill(Color.GREEN);
@@ -202,9 +222,8 @@ public class Effects {
         circle2.setRadius(30);
         circle2.setCenterX(610);
         circle2.setCenterY(910);
-        circle2.setEffect(glow);
 
-        nodes.addAll(imageView, imageView2, circle, circle2);
+        nodes.addAll(circle, circle2);
     }
 
     private HashMap<String, Supplier<Effect>> getEffects() {
