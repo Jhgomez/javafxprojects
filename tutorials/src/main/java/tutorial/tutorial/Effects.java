@@ -369,6 +369,17 @@ public class Effects {
          */
         effects.put("Lighting", Lighting::new);
 
+        effects.put("Distant Light", () -> {
+            Light.Distant light = new Light.Distant();
+            light.setAzimuth(45.0);
+            light.setElevation(30.0);
+
+            Lighting lighting = new Lighting();
+            lighting.setLight(light);
+
+            return lighting;
+        });
+
         return effects;
     }
 
