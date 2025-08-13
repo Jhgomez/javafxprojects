@@ -117,7 +117,7 @@ public class Effects {
             if (effects.get(newVal) != null) {
                 if(newVal.equals("Point Spot") || newVal.equals("Spot Light")) {
                     modifiableText1.setFill(Color.RED);
-                } else if(oldVal.equals("Point Spot") || oldVal.equals("Spot Light")) {
+                } else if(oldVal != null && (oldVal.equals("Point Spot") || oldVal.equals("Spot Light"))) {
                     modifiableText1.setFill(Color.DARKSEAGREEN);
                 }
 
@@ -153,7 +153,7 @@ public class Effects {
             if (effects.get(newVal) != null) {
                 if(newVal.equals("Point Spot") || newVal.equals("Spot Light")) {
                     modifiableText2.setFill(Color.RED);
-                } else if(oldVal != null && oldVal.equals("Point Spot") || oldVal.equals("Spot Light")) {
+                } else if(oldVal != null && (oldVal.equals("Point Spot") || oldVal.equals("Spot Light"))) {
                     modifiableText2.setFill(Color.DARKSEAGREEN);
                 }
 
@@ -235,7 +235,7 @@ public class Effects {
             if (effects.get(newVal) != null) {
                 if(newVal.equals("Point Spot") || newVal.equals("Spot Light")) {
                     circle.setFill(Color.CORNFLOWERBLUE);
-                } else if(oldVal != null && oldVal.equals("Point Spot") || oldVal.equals("Spot Light")) {
+                } else if(oldVal != null && (oldVal.equals("Point Spot") || oldVal.equals("Spot Light"))) {
                     circle.setFill(Color.GREEN);
                 }
 
@@ -263,7 +263,7 @@ public class Effects {
             if (effects.get(newVal) != null) {
                 if(newVal.equals("Point Spot") || newVal.equals("Spot Light")) {
                     circle2.setFill(Color.CORNFLOWERBLUE);
-                } else if(oldVal != null && oldVal.equals("Point Spot") || oldVal.equals("Spot Light")) {
+                } else if(oldVal != null && (oldVal.equals("Point Spot") || oldVal.equals("Spot Light"))) {
                     circle2.setFill(Color.GREEN);
                 }
 
@@ -440,6 +440,32 @@ public class Effects {
             lighting.setLight(light);
 
             return lighting;
+        });
+
+        /*
+        an image is composed of infinite number of pixels. The Displacement Map Effect shifts the pixels of an input
+        image by a certain distance and produces an output image with different locations of these pixels.
+         */
+        effects.put("Displacement Map", () -> {
+            int width = 220;
+            int height = 100;
+
+            // A buffer that contains floating point data, intended for use as a parameter to effects such as DisplacementMap
+            FloatMap floatMap = new FloatMap();
+            floatMap.setWidth(width);
+            floatMap.setHeight(height);
+
+            for (int i = 0; i < width; i++) {
+                double v = (Math.sin(i / 20.0 * Math.PI) - 0.5) / 40.0;
+                for (int j = 0; j < height; j++) {
+                    floatMap.setSamples(i, j, 0.0f, (float) v);
+                }
+            }
+
+            DisplacementMap displacementMap = new DisplacementMap();
+            displacementMap.setMapData(floatMap);
+
+            return displacementMap;
         });
 
         return effects;
