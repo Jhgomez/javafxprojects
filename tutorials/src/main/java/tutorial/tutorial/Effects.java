@@ -1,8 +1,10 @@
 package tutorial.tutorial;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.*;
 import javafx.scene.image.Image;
@@ -16,7 +18,9 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * In JavaFX, you can set various effects to a node such as bloom, blur and glow. These classes are available in a package
@@ -25,6 +29,7 @@ import java.util.Objects;
 public class Effects {
     ObservableList<Node> nodes;
     Image image = new Image(Objects.requireNonNull(getClass().getResource("tree.png")).toExternalForm());
+    HashMap<String, Supplier<Effect>> effects;
 
     public void displayScreen(Runnable runnable) {
         ScrollPane scrollPane = new ScrollPane();
@@ -57,7 +62,7 @@ public class Effects {
         imageInput();
         blendEffect();
         bloomEffect();
-        glowEffect();
+        allOtherEffects();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
 
@@ -78,8 +83,81 @@ public class Effects {
         stage.setOnCloseRequest(e -> runnable.run());
     }
 
-    private void glowEffect() {
-        Text text = new Text("First Image use Bloom, Second Image Use Glow, First circle no effect, second circle glow");
+    private void allOtherEffects() {
+        HashMap<String, Supplier<Effect>>  effects = getEffects();
+
+        ObservableList<String> options = FXCollections.observableArrayList(effects.keySet());
+
+        Text textTitle = new Text("Choose Between Different Effect For Each Text");
+        textTitle.setFont(Font.font(16));
+        textTitle.setX(335);
+        textTitle.setY(365);
+
+        nodes.add(textTitle);
+
+        Text modifiableText1 = new Text("JavaFX Tutorial App");
+        modifiableText1.setFont(Font.font(null, FontWeight.BOLD, 40));
+
+        modifiableText1.setX(335);
+        modifiableText1.setY(420);
+
+        modifiableText1.setFill(Color.DARKSEAGREEN);
+
+        Rectangle rectangle = new Rectangle();
+
+        rectangle.setX(340.0f);
+        rectangle.setY(380.0f);
+        rectangle.setWidth(380.0f);
+        rectangle.setHeight(60.0f);
+        rectangle.setFill(Color.TEAL);
+
+        ComboBox<String> topTextComboBox = new ComboBox<>(options);
+        topTextComboBox.setPromptText("Top Text Effect");
+
+        topTextComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                modifiableText1.setEffect(effects.get(newVal).get());
+            } else {
+                modifiableText1.setEffect(null);
+            }
+        });
+
+        topTextComboBox.setLayoutX(740);
+        topTextComboBox.setLayoutY(400);
+
+        nodes.addAll(rectangle, modifiableText1, topTextComboBox);
+
+        Text modifiableText2 = new Text("JavaFX Tutorial App");
+        modifiableText2.setFont(Font.font(null, FontWeight.BOLD, 40));
+        modifiableText2.setX(335);
+        modifiableText2.setY(500);
+        modifiableText2.setFill(Color.DARKSEAGREEN);
+
+        rectangle = new Rectangle();
+
+        rectangle.setX(340.0f);
+        rectangle.setY(460.0f);
+        rectangle.setWidth(380.0f);
+        rectangle.setHeight(60.0f);
+        rectangle.setFill(Color.TEAL);
+
+        ComboBox<String> bottomTextComboBox = new ComboBox<>(options);
+        bottomTextComboBox.setPromptText("Bottom Text Effect");
+
+        bottomTextComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                modifiableText2.setEffect(effects.get(newVal).get());
+            } else {
+                modifiableText2.setEffect(null);
+            }
+        });
+
+        bottomTextComboBox.setLayoutX(740);
+        bottomTextComboBox.setLayoutY(470);
+
+        nodes.addAll(rectangle, modifiableText2, bottomTextComboBox);
+
+        Text text = new Text("Choose between different effects for each image and circle");
         text.setWrappingWidth(360);
         text.setFont(Font.font(16));
         text.setX(350);
@@ -129,60 +207,32 @@ public class Effects {
         nodes.addAll(imageView, imageView2, circle, circle2);
     }
 
+    private HashMap<String, Supplier<Effect>> getEffects() {
+        if (effects != null) {
+            return effects;
+        }
+
+        effects = new HashMap<>();
+
+        effects.put("No Effect", null);
+
+        effects.put("Bloom", () -> {
+            Bloom bloom = new Bloom();
+            bloom.setThreshold(0.1);
+            return bloom;
+        });
+
+        effects.put("Glow", () -> {
+            Glow glow = new Glow();
+            glow.setLevel(0.9);
+            return glow;
+        });
+
+        return effects;
+    }
+
     private void bloomEffect() {
-        Text text = new Text("Same Text with Bloom applied and without Bloom(no effect)");
-        text.setFont(Font.font(16));
-        text.setX(315);
-        text.setY(365);
 
-        nodes.add(text);
-
-        text = new Text("JavaFX Tutorial App");
-
-        //Setting font to the text
-        text.setFont(Font.font(null, FontWeight.BOLD, 40));
-
-        text.setX(335);
-        text.setY(420);
-
-        text.setFill(Color.DARKSEAGREEN);
-
-        Rectangle rectangle = new Rectangle();
-
-        rectangle.setX(340.0f);
-        rectangle.setY(380.0f);
-        rectangle.setWidth(380.0f);
-        rectangle.setHeight(60.0f);
-        rectangle.setFill(Color.TEAL);
-
-        Bloom bloom = new Bloom();
-        bloom.setThreshold(0.1);
-        text.setEffect(bloom);
-
-        text.setId("firstText");
-
-        nodes.addAll(rectangle, text);
-
-        text = new Text("JavaFX Tutorial App");
-
-        text.setFont(Font.font(null, FontWeight.BOLD, 40));
-
-        text.setX(335);
-        text.setY(500);
-
-        text.setId("secondText");
-
-        text.setFill(Color.DARKSEAGREEN);
-
-        rectangle = new Rectangle();
-
-        rectangle.setX(340.0f);
-        rectangle.setY(460.0f);
-        rectangle.setWidth(380.0f);
-        rectangle.setHeight(60.0f);
-        rectangle.setFill(Color.TEAL);
-
-        nodes.addAll(rectangle, text);
     }
 
     /**
