@@ -310,6 +310,16 @@ public class Effects {
             return reflection;
         });
 
+        /*
+        in general changes the image from the black and white color to a reddish brown color.
+         */
+        effects.put("SepiaTone", () -> {
+            SepiaTone sepiaTone = new SepiaTone();
+            sepiaTone.setLevel(0.8);
+
+            return sepiaTone;
+        });
+
         return effects;
     }
 
