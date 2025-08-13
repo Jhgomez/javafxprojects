@@ -63,6 +63,20 @@ public class Effects {
         blendEffect();
         allOtherEffects();
 
+        // Uncomment this code to see the whole screen using the perspective effect
+//        PerspectiveTransform prst = new PerspectiveTransform();
+//        prst.setUlx(0);
+//        prst.setUly(0);
+//        prst.setUrx(1050);
+//        prst.setUry(365);
+//        prst.setLrx(1050.0);
+//        prst.setLry(547.5);
+//        prst.setLlx(0.0);
+//        prst.setLly(730.0);
+//
+//        scrollPane.setEffect(prst);
+//        scrollPane.setCache(true);
+
         Scene scene = new Scene(scrollPane, 1050, 730);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
@@ -466,6 +480,28 @@ public class Effects {
             displacementMap.setMapData(floatMap);
 
             return displacementMap;
+        });
+
+        /*
+        Provide a 3D illusion of a 2D object, thi will create a perspective in the direction of the Z-axis such that the
+        object looks like it can be measured on the XYZ-plane while it actually is just measured on the XY-plane
+
+        This effect provides non-affine transformation where the straightness of lines in the source object is preserved
+        in the output object. However, the parallelism is lost; unlike the affine transformation.where the points, straight
+        lines and parallelism is preserved from the source image to the output image. You can apply this to a group or region(pane)
+        */
+        effects.put("Perspective Transmform", () -> {
+            PerspectiveTransform prst = new PerspectiveTransform();
+            prst.setUlx(10.0);
+            prst.setUly(10.0);
+            prst.setUrx(310.0);
+            prst.setUry(40.0);
+            prst.setLrx(310.0);
+            prst.setLry(60.0);
+            prst.setLlx(10.0);
+            prst.setLly(90.0);
+
+            return prst;
         });
 
         return effects;
