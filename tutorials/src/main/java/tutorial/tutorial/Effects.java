@@ -320,6 +320,21 @@ public class Effects {
             return sepiaTone;
         });
 
+        /*
+        creates a duplicate of the specified node with blurry edges.
+         */
+        effects.put("Shadow", () -> {
+            Shadow shadow = new Shadow();
+
+            shadow.setBlurType(BlurType.GAUSSIAN);
+            shadow.setColor(Color.ROSYBROWN);
+            shadow.setHeight(5);
+            shadow.setWidth(5);
+            shadow.setRadius(5);
+
+            return shadow;
+        });
+
         return effects;
     }
 
@@ -403,37 +418,6 @@ public class Effects {
                 nodes.addAll(blendColorInput, blendColorText);
             }
         }
-
-//        Circle blendColorInput = new Circle();
-//        blendColorInput.setCenterX(50.0f);
-//        blendColorInput.setCenterY(320.0f);
-//        blendColorInput.setRadius(30.0f);
-//
-//        //Setting the fill color of the circle
-//        blendColorInput.setFill(Color.RED);
-//
-//        //Instantiating the blend class
-//        Blend blend = new Blend();
-//
-//        //Preparing the to input object
-//        ColorInput topInput = new ColorInput(15, 285, 75, 40, Color.GRAY);
-//
-//        //setting the top input to the blend object
-////        blend.setBottomInput(topInput);
-//        blend.setTopInput(topInput);
-//
-//        //setting the blend mode
-//        blend.setMode(BlendMode.SOFT_LIGHT);
-//
-//        //Applying the blend effect to circle
-//        blendColorInput.setEffect(blend);
-//
-//        Text text = new Text("Blend Effect");
-//        text.setFont(Font.font(16));
-//        text.setX(740);
-//        text.setY(20);
-
-//        nodes.addAll(text, blendColorInput);
     }
 
     /**
