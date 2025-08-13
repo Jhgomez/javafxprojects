@@ -335,6 +335,24 @@ public class Effects {
             return shadow;
         });
 
+        /*
+         is a type of a shadow effect; on applying this effect to a node, a shadow will be created behind the specified node.
+         */
+        effects.put("Drop Shadow", () -> {
+            DropShadow dropShadow = new DropShadow();
+
+            dropShadow.setBlurType(BlurType.GAUSSIAN);
+            dropShadow.setColor(Color.ROSYBROWN);
+            dropShadow.setHeight(5);
+            dropShadow.setWidth(5);
+            dropShadow.setRadius(5);
+            dropShadow.setOffsetX(3);
+            dropShadow.setOffsetY(2);
+            dropShadow.setSpread(12);
+
+            return dropShadow;
+        });
+
         return effects;
     }
 
