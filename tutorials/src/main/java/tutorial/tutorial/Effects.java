@@ -363,6 +363,12 @@ public class Effects {
             return innerShadow;
         });
 
+        /*
+        is used to simulate a light from a light source. There are different kinds of light sources which
+        include − Point, Distant and Spot.
+         */
+        effects.put("Lighting", Lighting::new);
+
         return effects;
     }
 
