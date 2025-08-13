@@ -61,7 +61,6 @@ public class Effects {
         colorInput();
         imageInput();
         blendEffect();
-        bloomEffect();
         allOtherEffects();
 
         Scene scene = new Scene(scrollPane, 1050, 730);
@@ -277,11 +276,41 @@ public class Effects {
             return glow;
         });
 
+        /*
+         * iterations − This property is of an integer type representing the number of iterations of the effect, which are
+         * to be applied on the node. This is done to improve its quality or smoothness.
+         */
+        effects.put("Box Blur", () -> {
+            BoxBlur boxblur = new BoxBlur();
+            boxblur.setWidth(8.0f);
+            boxblur.setHeight(3.0f);
+            boxblur.setIterations(3);
+
+            return boxblur;
+        });
+
+        /*
+         * is an effect to blur the nodes in JavaFX. The only difference is that in Gaussian Blur Effect, a Gaussian
+         * convolution kernel is used to produce the blurring effect.
+         */
+        effects.put("GaussianBlur", () -> {
+            GaussianBlur gaussianBlur = new GaussianBlur();
+            gaussianBlur.setRadius(10.5);
+
+            return gaussianBlur;
+        });
+
+        effects.put("Reflection", () -> {
+            Reflection reflection = new Reflection();
+            reflection.setBottomOpacity(0.0);
+            reflection.setTopOpacity(0.5);
+            reflection.setTopOffset(0.0);
+            reflection.setFraction(0.7);
+
+            return reflection;
+        });
+
         return effects;
-    }
-
-    private void bloomEffect() {
-
     }
 
     /**
