@@ -217,13 +217,43 @@ public class Effects {
         circle.setCenterX(520);
         circle.setCenterY(910);
 
+        ComboBox<String> leftCircleComboBox = new ComboBox<>(options);
+        leftCircleComboBox.setPromptText("Right Image Effect");
+
+        leftCircleComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                circle.setEffect(effects.get(newVal).get());
+            } else {
+                circle.setEffect(null);
+            }
+        });
+
+        leftCircleComboBox.setLayoutX(680);
+        leftCircleComboBox.setLayoutY(890);
+
+        nodes.addAll(circle, leftCircleComboBox);
+
         Circle circle2 = new Circle();
         circle2.setFill(Color.GREEN);
         circle2.setRadius(30);
         circle2.setCenterX(610);
         circle2.setCenterY(910);
 
-        nodes.addAll(circle, circle2);
+        ComboBox<String> rightCircleComboBox = new ComboBox<>(options);
+        rightCircleComboBox.setPromptText("Right Image Effect");
+
+        rightCircleComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if (effects.get(newVal) != null) {
+                circle2.setEffect(effects.get(newVal).get());
+            } else {
+                circle2.setEffect(null);
+            }
+        });
+
+        rightCircleComboBox.setLayoutX(680);
+        rightCircleComboBox.setLayoutY(925);
+
+        nodes.addAll(circle2, rightCircleComboBox);
     }
 
     private HashMap<String, Supplier<Effect>> getEffects() {
