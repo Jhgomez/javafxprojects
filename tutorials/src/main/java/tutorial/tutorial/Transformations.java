@@ -1,5 +1,6 @@
 package tutorial.tutorial;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -7,18 +8,23 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
+import javafx.scene.effect.Effect;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
+
+import java.util.HashMap;
+import java.util.function.Supplier;
 
 /**
  * Transformation is changing graphics into something else by applying some rules. These rules allow you to
@@ -46,16 +52,45 @@ import javafx.stage.Stage;
  */
 public class Transformations {
     ObservableList<Node> nodes;
+    HashMap<String, Runnable> transformations;
 
     public void displayScreen(Runnable runnable) {
-        Group group = new Group();
-//        AnchorPane ap = new AnchorPane();
-        nodes = group.getChildren();
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setStyle("-fx-background: orange; -fx-background-color: orange;");
+        Pane pane = new Pane();
 
-        _2DRotation();
-        _3DRotation();
+        scrollPane.setContent(pane);
+
+        nodes = pane.getChildren();
+
+        HashMap<String, Runnable> transformations1 = getTransformations();
+        ObservableList<String> options = FXCollections.observableArrayList(transformations1.keySet());
+
+        ComboBox<String> transformationsComboBox = new ComboBox<>(options);
+        transformationsComboBox.setPromptText("Choose Transformation");
+
+        transformationsComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
+            if(!newVal.equals(oldVal)) {
+                nodes.clear();
+                nodes.add(transformationsComboBox);
+
+                if (transformations1.get(newVal) != null) {
+                    transformations1.get(newVal).run();
+                }
+
+                for (Node node : nodes) {
+                    DragUtil.setDraggable(node);
+                }
+            }
+        });
+
+        transformationsComboBox.setLayoutX(10);
+        transformationsComboBox.setLayoutY(10);
+
+        nodes.add(transformationsComboBox);
+
 //        multipleTransformations();
-        Scene scene = new Scene(group, 1050, 540);
+        Scene scene = new Scene(scrollPane, 1050, 540);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
@@ -65,15 +100,22 @@ public class Transformations {
         stage.setScene(scene);
         stage.sizeToScene();
 
-        for (Node node : nodes) {
-            if(!(node instanceof Slider)) {
-                DragUtil.setDraggable(node);
-            }
-        }
-
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    private HashMap<String, Runnable> getTransformations() {
+        if (transformations == null) {
+            transformations = new HashMap<>();
+
+            transformations.put("Rotation", () -> {
+                _2DRotation();
+                _3DRotation();
+            });
+        }
+
+        return transformations;
     }
 
     private void _2DRotation() {
@@ -137,9 +179,14 @@ public class Transformations {
         slidersBox.setPadding(new Insets(8, 8, 8, 8));
 
         slidersBox.setLayoutX(5);
-        slidersBox.setLayoutY(5);
+        slidersBox.setLayoutY(90);
 
-        nodes.addAll(rectangle, slidersBox);
+        Text title = new Text("2D Rotation Transformation");
+        title.setFont(Font.font(16));
+        title.setX(10);
+        title.setY(70);
+
+        nodes.addAll(title, rectangle, slidersBox);
     }
 
     private void _3DRotation() {
@@ -159,8 +206,15 @@ public class Transformations {
 //        translate.setY(150);
 //        translate.setZ(25);
 
-        Rotate rxBox = new Rotate(0, 0, 0, 0, Rotate.X_AXIS);
-        Rotate ryBox = new Rotate(0, 0, 0, 0, Rotate.Y_AXIS);
+        /*
+         here instead of defining the same coordinates as the layout X and layout Y of the box, I could have created the box
+         without changing its coordinates(they will be 0,0,0 by default) and then all rotates and bindings between the rotate
+         effects of each axis and the slider to control the angle could have been set to 0 this will save us the task of calculating
+         the center of the axis and then I could have just applied a translate transformation to the box which move the box
+         keeping all the values relative
+         */
+        Rotate rxBox = new Rotate(0, 900, 0, 0, Rotate.X_AXIS);
+        Rotate ryBox = new Rotate(0, 0, 400, 0, Rotate.Y_AXIS);
         Rotate rzBox = new Rotate(0, 0, 0, 0, Rotate.Z_AXIS);
 
         rxBox.setAngle(30);
@@ -351,8 +405,14 @@ public class Transformations {
         );
 
         slidersBox.setLayoutX(500);
+        slidersBox.setLayoutY(90);
 
-        nodes.addAll(box, slidersBox);
+        Text title = new Text("3D Rotation Transformation");
+        title.setFont(Font.font(16));
+        title.setX(500);
+        title.setY(70);
+
+        nodes.addAll(title, box, slidersBox);
     }
 
     private void multipleTransformations() {
