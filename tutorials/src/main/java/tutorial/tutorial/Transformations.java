@@ -1,8 +1,5 @@
 package tutorial.tutorial;
 
-import javafx.animation.PathTransition;
-import javafx.animation.StrokeTransition;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -13,21 +10,15 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-
-import java.util.Formatter;
 
 /**
  * Transformation is changing graphics into something else by applying some rules. These rules allow you to
@@ -61,9 +52,9 @@ public class Transformations {
 //        AnchorPane ap = new AnchorPane();
         nodes = group.getChildren();
 
-        rotation();
+        _2DRotation();
+        _3DRotation();
 //        multipleTransformations();
-//        _3DRotation();
         Scene scene = new Scene(group, 1050, 540);
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
@@ -85,28 +76,20 @@ public class Transformations {
         stage.setOnCloseRequest(e -> runnable.run());
     }
 
-    private void rotation() {
+    private void _2DRotation() {
         Rectangle rectangle = new Rectangle(260, 70, 50, 75);
         rectangle.setFill(Color.BURLYWOOD);
         rectangle.setStroke(Color.BLACK);
 
         Slider angleSlider = new Slider(0, 720, 0);
-//        angleSlider.setLayoutX(70);
-//        angleSlider.setLayoutY(70);
-
         Label angleLabel = new Label("Angle");
         Label angleValue = new Label("value: 0");
 
         Slider xSlider = new Slider(0, 520, 260);
-//        xSlider.setLayoutX(70);
-//        xSlider.setLayoutY(85);
-
         Label xLabel = new Label("Pivot X");
         Label xValue = new Label("value: 0");
 
         Slider ySlider = new Slider(0, 300, 70);
-//        ySlider.setLayoutX(70);
-//        ySlider.setLayoutY(100);
         Label yLabel = new Label("Pivot Y");
         Label yValue = new Label("value: 0");
 
@@ -167,22 +150,209 @@ public class Transformations {
         box.setWidth(150.0);
         box.setHeight(150.0);
         box.setDepth(150.0);
+        box.setLayoutX(900);
+        box.setLayoutY(400);
 
         //Creating the translation transformation
-        Translate translate = new Translate();
-        translate.setX(400);
-        translate.setY(150);
-        translate.setZ(25);
+//        Translate translate = new Translate();
+//        translate.setX(400);
+//        translate.setY(150);
+//        translate.setZ(25);
 
         Rotate rxBox = new Rotate(0, 0, 0, 0, Rotate.X_AXIS);
         Rotate ryBox = new Rotate(0, 0, 0, 0, Rotate.Y_AXIS);
         Rotate rzBox = new Rotate(0, 0, 0, 0, Rotate.Z_AXIS);
+
         rxBox.setAngle(30);
         ryBox.setAngle(50);
         rzBox.setAngle(30);
-        box.getTransforms().addAll(translate,rxBox, ryBox, rzBox);
 
-        nodes.add(box);
+        box.getTransforms().addAll(rxBox, ryBox, rzBox);
+
+        //========================== X
+        Slider xAngleSlider = new Slider(0, 720, 0);
+        Label xAngleLabel = new Label("X Angle");
+        Label xAngleValue = new Label("value: 0");
+
+        Slider xXPivotSlider = new Slider(600, 1200, 900);
+        Label xXLabel = new Label("Pivot X-X");
+        Label xXValue = new Label("value: 900");
+
+        Slider xYPivotSlider = new Slider(-300, 300, 0);
+        Label xYLabel = new Label("Pivot X-Y");
+        Label xYValue = new Label("value: 0");
+
+        Slider xZPivotSlider = new Slider(-300, 300, 0);
+        Label xZLabel = new Label("Pivot X-Z");
+        Label xZValue = new Label("value: 0");
+
+        //============================ Y
+        Slider yAngleSlider = new Slider(0, 720, 0);
+        Label yAngleLabel = new Label("Y Angle");
+        Label yAngleValue = new Label("value: 0");
+
+        Slider yXPivotSlider = new Slider(-300, 300, 0);
+        Label yXLabel = new Label("Pivot Y-X");
+        Label yXValue = new Label("value: 0");
+
+        Slider yYPivotSlider = new Slider(100, 700, 400);
+        Label yYLabel = new Label("Pivot Y-Y");
+        Label yYValue = new Label("value: 400");
+
+        Slider yZPivotSlider = new Slider(-300, 300, 0);
+        Label yZLabel = new Label("Pivot X-Z");
+        Label yZValue = new Label("value: 0");
+
+        //============================ Z
+        Slider zAngleSlider = new Slider(0, 720, 0);
+        Label zAngleLabel = new Label("Z Angle");
+        Label zAngleValue = new Label("value: 0");
+
+        Slider zXPivotSlider = new Slider(0, 400, 0);
+        Label zXLabel = new Label("Pivot Z-X");
+        Label zXValue = new Label("value: 0");
+
+        Slider zYPivotSlider = new Slider(0, 400, 0);
+        Label zYLabel = new Label("Pivot Z-Y");
+        Label zYValue = new Label("value: 0");
+
+        Slider zZPivotSlider = new Slider(-300, 300, 0);
+        Label zZLabel = new Label("Pivot X-Z");
+        Label zZValue = new Label("value: 0");
+
+        //==================== X
+        rxBox.angleProperty().bind(xAngleSlider.valueProperty());
+        xAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    xAngleValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        rxBox.pivotXProperty().bind(xXPivotSlider.valueProperty());
+        xXPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    xXValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        rxBox.pivotYProperty().bind(xYPivotSlider.valueProperty());
+        xYPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    xYValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        rxBox.pivotZProperty().bind(xZPivotSlider.valueProperty());
+        xZPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    xZValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        //==================== Y
+        ryBox.angleProperty().bind(yAngleSlider.valueProperty());
+        yAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    yAngleValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        ryBox.pivotXProperty().bind(yXPivotSlider.valueProperty());
+        yXPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    yXValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        ryBox.pivotYProperty().bind(yYPivotSlider.valueProperty());
+        yYPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    yYValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        ryBox.pivotZProperty().bind(yZPivotSlider.valueProperty());
+        yZPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    yZValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+        //==================== Z
+        rzBox.angleProperty().bind(zAngleSlider.valueProperty());
+        zAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    zAngleValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+
+        rzBox.pivotXProperty().bind(zXPivotSlider.valueProperty());
+        zXPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    zXValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        rzBox.pivotYProperty().bind(zYPivotSlider.valueProperty());
+        zYPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    zYValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+        rzBox.pivotZProperty().bind(zZPivotSlider.valueProperty());
+        zZPivotSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                    zZValue.setText("value: " + String.format("%.2f", newValue.doubleValue()));
+                }
+        );
+
+
+        VBox slidersBox = new VBox(
+                new Text("X Axis Sliders"),
+                xAngleLabel,
+                xAngleSlider,
+                xAngleValue,
+                new Separator(Orientation.VERTICAL),
+                xXLabel,
+                xXPivotSlider,
+                xXValue,
+                new Separator(Orientation.VERTICAL),
+                xYLabel,
+                xYPivotSlider,
+                xYValue,
+                new Separator(Orientation.VERTICAL),
+                xZLabel,
+                xZPivotSlider,
+                xZValue,
+                new Separator(Orientation.VERTICAL),
+                new Text("Y Axis Sliders"),
+                yAngleLabel,
+                yAngleSlider,
+                yAngleValue,
+                new Separator(Orientation.VERTICAL),
+                yXLabel,
+                yXPivotSlider,
+                yXValue,
+                new Separator(Orientation.VERTICAL),
+                yYLabel,
+                yYPivotSlider,
+                yYValue,
+                new Separator(Orientation.VERTICAL),
+                yZLabel,
+                yZPivotSlider,
+                yZValue,
+                new Separator(Orientation.VERTICAL),
+                new Text("Z Axis Sliders"),
+                zAngleLabel,
+                zAngleSlider,
+                zAngleValue,
+                new Separator(Orientation.VERTICAL),
+                zXLabel,
+                zXPivotSlider,
+                zXValue,
+                new Separator(Orientation.VERTICAL),
+                zYLabel,
+                zYPivotSlider,
+                zYValue,
+                new Separator(Orientation.VERTICAL),
+                zZLabel,
+                zZPivotSlider,
+                zZValue,
+                new Separator(Orientation.VERTICAL)
+        );
+
+        slidersBox.setLayoutX(500);
+
+        nodes.addAll(box, slidersBox);
     }
 
     private void multipleTransformations() {
