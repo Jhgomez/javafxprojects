@@ -5,12 +5,10 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.Effect;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -18,7 +16,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
@@ -26,7 +23,6 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 
 import java.util.HashMap;
-import java.util.function.Supplier;
 
 /**
  * Transformation is changing graphics into something else by applying some rules. These rules allow you to
@@ -121,7 +117,29 @@ public class Transformations {
                 _3DRotation();
             });
 
-            transformations.put("Scaling", this::scaling);
+            transformations.put("Scaling", () -> {
+                enableScalingControl(
+                        //Box is created at 0,0,0 by default
+                        new Box(150, 150, 150),
+                        200,
+                        350,
+                        0,
+                        400,
+                        50
+                );
+
+                enableScalingControl(
+                        //Sphere is created at 0,0,0 by default
+                        new Sphere(50, 150),
+                        800,
+                        350,
+                        0,
+                        1000,
+                        50
+                );
+
+//                sphereScaling();
+            });
         }
 
         return transformations;
@@ -133,18 +151,22 @@ public class Transformations {
 
      * Scaling transformation is used to change the size of an object.
      */
-    private void scaling() {
-        //Box is created at 0,0,0 by default
-        Box box = new Box(150, 150, 150);
-
+    private void enableScalingControl(
+            Shape3D shape3D,
+            double shapeXTranslate,
+            double shapeYTranslate,
+            double shapeZTranslate,
+            double boardX,
+            double boardY
+    ) {
         Rotate xRotate = new Rotate(0, 0, 0, 0, Rotate.X_AXIS);
         Rotate yRotate = new Rotate(0, 0, 0, 0, Rotate.Y_AXIS);
         Rotate zRotate = new Rotate(0, 0, 0, 0, Rotate.Z_AXIS);
 
         Translate translate = new Translate();
-        translate.setX(200);
-        translate.setY(350);
-        translate.setZ(0);
+        translate.setX(shapeXTranslate);
+        translate.setY(shapeYTranslate);
+        translate.setZ(shapeZTranslate);
 
         Scale scale = new Scale();
 
@@ -157,7 +179,7 @@ public class Transformations {
         scale.setPivotY(0);
         scale.setPivotZ(0);
 
-        box.getTransforms().addAll(translate, scale, xRotate, yRotate, zRotate);
+        shape3D.getTransforms().addAll(translate, scale, xRotate, yRotate, zRotate);
 
         //========================= Scale X and scale pivot X
         Slider scaleX = new Slider(-20, 20, 1);
@@ -224,7 +246,8 @@ public class Transformations {
 
         //========================= Scale Sliders
         VBox scaleSlidersBox = new VBox(
-                new Text("Scale XYZ Sliders"),
+                new Text("Scale controls"),
+                new Separator(Orientation.VERTICAL),
                 scaleXLabel,
                 scaleX,
                 ScaleXValue,
@@ -381,6 +404,8 @@ public class Transformations {
 
 
         VBox rotateSlidersBox = new VBox(
+                new Text("Rotation Controls"),
+                new Separator(Orientation.VERTICAL),
                 new Text("X Axis Sliders"),
                 xAngleLabel,
                 xAngleSlider,
@@ -435,15 +460,17 @@ public class Transformations {
         );
 
         HBox slidersBox = new HBox(rotateSlidersBox, scaleSlidersBox);
-        slidersBox.setLayoutX(500);
-        slidersBox.setLayoutY(50);
+//        slidersBox.setLayoutX(500);
+//        slidersBox.setLayoutY(50);
+        slidersBox.setLayoutX(boardX);
+        slidersBox.setLayoutY(boardY);
 
         Text title = new Text("3D Scaling");
         title.setFont(Font.font(16));
-        title.setX(500);
-        title.setY(30);
+        title.setX(boardX);
+        title.setY(boardY - 20);
 
-        nodes.addAll(box, title, slidersBox);
+        nodes.addAll(shape3D, title, slidersBox);
     }
 
     private void _2DRotation() {
@@ -489,6 +516,8 @@ public class Transformations {
         separator1.setStyle("-fx-background: orange; -fx-background-color: orange;");
 
         VBox slidersBox = new VBox(
+                new Text("Rotation Controls"),
+                new Separator(Orientation.VERTICAL),
                 new Text("Rotate rectangle sliders"),
                 angleLabel,
                 angleSlider,
