@@ -162,9 +162,31 @@ public class Transformations {
                     400,
                     50
             );
+
+            Polygon hexagon1 = new Polygon();
+
+            //Adding coordinates to the hexagon
+            hexagon1.getPoints().addAll(
+                    0.0, 0.0,
+                    200.0, 0.0,
+                    250.0, 100.0,
+                    200.0, 200.0,
+                    0.0, 200.0,
+                    -50.0, 100.0
+            );
+
+            hexagon1.setFill(Color.BLUE);
+            hexagon1.setStroke(Color.BLACK);
+
+            enableShearingControl(
+                    hexagon1,
+                    800,
+                    350,
+                    0,
+                    1100,
+                    50
+            );
         });
-
-
 
         return transformations;
     }
@@ -177,10 +199,7 @@ public class Transformations {
             double boardX,
             double boardY
     ) {
-        if (shape instanceof Shape3D) {
-            enableScalingControl((Shape3D)shape, shapeXTranslate, shapeYTranslate, shapeZTranslate, boardX, boardY);
-        }
-
+        enableScalingControl(shape, shapeXTranslate, shapeYTranslate, shapeZTranslate, boardX, boardY);
 
         Shear shear =  new Shear();
         shear.setPivotX(shapeXTranslate);
@@ -266,7 +285,7 @@ public class Transformations {
      * Scaling transformation is used to change the size of an object.
      */
     private void enableScalingControl(
-            Shape3D shape3D,
+            Node shape3D,
             double shapeXTranslate,
             double shapeYTranslate,
             double shapeZTranslate,
