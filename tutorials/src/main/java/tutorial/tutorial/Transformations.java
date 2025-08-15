@@ -19,6 +19,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
+import javafx.scene.transform.Shear;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 
@@ -117,7 +118,7 @@ public class Transformations {
                 _3DRotation();
             });
 
-            transformations.put("Scaling", () -> {
+            transformations.put("Scaling/Rotation/Translation", () -> {
                 enableScalingControl(
                         //Box is created at 0,0,0 by default
                         new Box(150, 150, 150),
@@ -134,7 +135,17 @@ public class Transformations {
                         800,
                         350,
                         0,
-                        1000,
+                        900,
+                        50
+                );
+
+                enableScalingControl(
+                        //Sphere is created at 0,0,0 by default
+                        new Cylinder(50, 50,50),
+                        1300,
+                        350,
+                        0,
+                        1420,
                         50
                 );
 
@@ -142,7 +153,110 @@ public class Transformations {
             });
         }
 
+        transformations.put("Scaling/Rotation/Translation/Shearing", () -> {
+            enableShearingControl(
+                    new Cylinder(150, 150, 150),
+                    200,
+                    350,
+                    0,
+                    400,
+                    50
+            );
+        });
+
+
+
         return transformations;
+    }
+
+    private void enableShearingControl(
+            Node shape,
+            double shapeXTranslate,
+            double shapeYTranslate,
+            double shapeZTranslate,
+            double boardX,
+            double boardY
+    ) {
+        if (shape instanceof Shape3D) {
+            enableScalingControl((Shape3D)shape, shapeXTranslate, shapeYTranslate, shapeZTranslate, boardX, boardY);
+        }
+
+
+        Shear shear =  new Shear();
+        shear.setPivotX(shapeXTranslate);
+        shear.setPivotY(shapeYTranslate);
+
+        //Setting the dimensions for the shear
+        shear.setX(1);
+        shear.setY(1);
+
+        shape.getTransforms().add(shear);
+
+        Slider pivotX = new Slider(-300, 300,0);
+        Label pivotXLabel = new Label("Pivot X");
+        Label pivotXValue =  new Label("Value: 0");
+        pivotX.setBlockIncrement(1);
+
+        shear.pivotXProperty().bind(pivotX.valueProperty());
+        pivotX.valueProperty().addListener((observable, oldValue, newValue) -> {
+            pivotXValue.setText("Value: " + String.format("%.2f", newValue.doubleValue()));
+        });
+
+        Slider pivotY = new Slider(-300, 300,0);
+        Label pivotYLabel = new Label("Pivot Y");
+        Label pivotYValue =  new Label("Value: 0");
+        pivotY.setBlockIncrement(1);
+
+        shear.pivotYProperty().bind(pivotY.valueProperty());
+        pivotY.valueProperty().addListener((observable, oldValue, newValue) -> {
+            pivotYValue.setText("Value: " + String.format("%.2f", newValue.doubleValue()));
+        });
+
+        Slider shearX = new Slider(-5, 5,0);
+        Label shearXLabel = new Label("Shear X");
+        Label shearXValue =  new Label("Value: 1");
+        shearX.setBlockIncrement(0.1);
+
+        shear.xProperty().bind(shearX.valueProperty());
+        shearX.valueProperty().addListener((observable, oldValue, newValue) -> {
+            shearXValue.setText("Value: " + String.format("%.2f", newValue.doubleValue()));
+        });
+
+        Slider shearY = new Slider(-5, 5,0);
+        Label shearYLabel = new Label("Pivot Y");
+        Label shearYValue =  new Label("Shear: 1");
+        shearY.setBlockIncrement(0.1);
+
+        shear.yProperty().bind(shearY.valueProperty());
+        shearY.valueProperty().addListener((observable, oldValue, newValue) -> {
+            shearYValue.setText("Value: " + String.format("%.2f", newValue.doubleValue()));
+        });
+
+        VBox vBox = new VBox(
+                new Text("Shear Control"),
+                new Separator(Orientation.VERTICAL),
+                pivotXLabel,
+                pivotX,
+                pivotXValue,
+                new Separator(Orientation.VERTICAL),
+                pivotYLabel,
+                pivotY,
+                pivotYValue,
+                new Separator(Orientation.VERTICAL),
+                shearXLabel,
+                shearX,
+                shearXValue,
+                new Separator(Orientation.VERTICAL),
+                shearYLabel,
+                shearY,
+                shearYValue,
+                new Separator(Orientation.VERTICAL)
+        );
+
+        vBox.setLayoutX(boardX + 285);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
     }
 
     /**
