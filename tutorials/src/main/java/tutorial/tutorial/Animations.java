@@ -1,5 +1,6 @@
 package tutorial.tutorial;
 
+import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.animation.ScaleTransition;
 import javafx.beans.property.ObjectProperty;
@@ -151,28 +152,21 @@ public class Animations {
      * toX − Specifies the stop X scale value of this ScaleTransition.
      * toY − The stop Y scale value of this ScaleTransition.
      * toZ − The stop Z scale value of this ScaleTransition.
+
+     * Similar as in rotation transition animation, here also, you should use pairs of the "by" variables with "from" variables,
+     * or "from" with "to", or "by" variables alone in which case the "to" is assumed to be the original size. In this example
+     * we will use the "by" variables only if you want to try setting up other variables please uncomment the proper code
+     * in this function
      */
     private void scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
         ScaleTransition scaleTransition = new ScaleTransition();
-        scaleTransition.setDuration(Duration.millis(1000));
         scaleTransition.setNode(node);
-        scaleTransition.setByY(1.5);
-        scaleTransition.setByX(1.5);
-        scaleTransition.setCycleCount(50);
+        scaleTransition.setCycleCount(ScaleTransition.INDEFINITE);
 
-        //Setting auto reverse value to true
-        scaleTransition.setAutoReverse(false);
-
-        //Playing the animation
-        scaleTransition.play();
-
-        RotateTransition rotateTransition = new RotateTransition();
-        rotateTransition.setNode(node);
-        rotateTransition.setCycleCount(RotateTransition.INDEFINITE);
-
+        //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
 
         Slider durationSlider = new Slider(0, 100, 0);
@@ -180,51 +174,110 @@ public class Animations {
         Label durationValue = new Label("Value: 0s");
         durationSlider.setBlockIncrement(0.1);
 
-//        rotateTransition.setDuration(Duration.millis(1000));
-        rotateTransition.durationProperty().bind(duration);
+        scaleTransition.durationProperty().bind(duration);
         durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
             duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
             durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
         });
 
-        Slider angleSlider = new Slider(-720, 720, 0);
-        Label angleLabel = new Label("ByAngle");
-        Label angleValue = new Label("Value: 0");
-        angleSlider.setBlockIncrement(1);
+        //==================================== BY XYZ VALUES
+        Slider by_x_slider = new Slider(-10, 10, 1);
+        Label byXLabel = new Label("By X");
+        Label byXValue = new Label("Value: 0");
+        by_x_slider.setBlockIncrement(1);
 
-//        rotateTransition.setByAngle(360);
-        rotateTransition.byAngleProperty().bind(angleSlider.valueProperty());
-        angleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            angleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        scaleTransition.byXProperty().bind(by_x_slider.valueProperty());
+        by_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byXValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
 
-        Slider fromAngleSlider = new Slider(-720, 720, 0);
-        Label fromAngleLabel = new Label("FromAngle");
-        Label fromAngleValue = new Label("Value: 0");
-        fromAngleSlider.setBlockIncrement(1);
+        Slider by_y_slider = new Slider(-10, 10, 1);
+        Label byYLabel = new Label("By Y");
+        Label byYValue = new Label("Value: 0");
+        by_y_slider.setBlockIncrement(1);
 
-//        rotateTransition.setFromAngle(360);
-//        rotateTransition.fromAngleProperty().bind(fromAngleSlider.valueProperty());
-        fromAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            fromAngleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        scaleTransition.byYProperty().bind(by_y_slider.valueProperty());
+        by_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byYValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
 
-        Slider toAngleSlider = new Slider(-720, 720, 0);
-        Label toAngleLabel = new Label("ToAngle");
-        Label toAngleValue = new Label("Value: 0");
-        toAngleSlider.setBlockIncrement(1);
+        Slider by_z_slider = new Slider(-10, 10, 1);
+        Label byZLabel = new Label("By Z");
+        Label byZValue = new Label("Value: 0");
+        by_z_slider.setBlockIncrement(1);
 
-//        rotateTransition.setByAngle(360);
-//        rotateTransition.toAngleProperty().bind(toAngleSlider.valueProperty());
-        toAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-            toAngleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        scaleTransition.byZProperty().bind(by_z_slider.valueProperty());
+        by_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byZValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
 
-        //rotateTransition.setAutoReverse(false);
+        //======================================= FROM XYZ VALUES
+        Slider from_x_slider = new Slider(-10, 10, 1);
+        Label fromXLabel = new Label("From X");
+        Label fromXValue = new Label("Value: 0");
+        from_x_slider.setBlockIncrement(1);
+
+        scaleTransition.fromXProperty().bind(from_x_slider.valueProperty());
+        from_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromXValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider from_y_slider = new Slider(-10, 10, 1);
+        Label fromYLabel = new Label("From Y");
+        Label fromYValue = new Label("Value: 0");
+        from_y_slider.setBlockIncrement(1);
+
+        scaleTransition.fromYProperty().bind(from_y_slider.valueProperty());
+        from_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromYValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider from_z_slider = new Slider(-10, 10, 1);
+        Label fromZLabel = new Label("From Z");
+        Label fromZValue = new Label("Value: 0");
+        from_z_slider.setBlockIncrement(1);
+
+        scaleTransition.fromZProperty().bind(from_z_slider.valueProperty());
+        from_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromZValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //======================================= TO XYZ VALUES
+        Slider to_x_slider = new Slider(-10, 10, 1);
+        Label toXLabel = new Label("To X");
+        Label toXValue = new Label("Value: 0");
+        to_x_slider.setBlockIncrement(1);
+
+        scaleTransition.toXProperty().bind(to_x_slider.valueProperty());
+        to_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toXValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider to_y_slider = new Slider(-10, 10, 1);
+        Label toYLabel = new Label("To Y");
+        Label toYValue = new Label("Value: 0");
+        to_y_slider.setBlockIncrement(1);
+
+        scaleTransition.toYProperty().bind(to_y_slider.valueProperty());
+        to_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toYValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider to_z_slider = new Slider(-10, 10, 1);
+        Label toZLabel = new Label("To Z");
+        Label toZValue = new Label("Value: 0");
+        to_z_slider.setBlockIncrement(1);
+
+        scaleTransition.toZProperty().bind(to_z_slider.valueProperty());
+        to_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toZValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //======================================== AUTOREVERSE
         CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
         autoReverseCheckBox.setSelected(true);
 
-        rotateTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+        scaleTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
 
         Slider playSlider = new Slider(0, 2, 2);
         playSlider.setBlockIncrement(1);
@@ -236,18 +289,42 @@ public class Animations {
 
             switch (newValue.intValue()) {
                 case 0 -> {
-                    rotateTransition.stop();
+                    scaleTransition.stop();
                 }
                 case 1 -> {
-                    rotateTransition.pause();
+                    scaleTransition.pause();
                 }
                 case 2 -> {
-                    rotateTransition.play();
+                    scaleTransition.play();
                 }
             }
         });
 
-        Text title = new Text("RotateTrans Controls(check function notes, by default this example only uses \"byAngle\", you have to uncomment code if you want to use the other properties)");
+        HashMap<String, Interpolator> interpolators = new HashMap<>();
+        interpolators.put("Ease Both", Interpolator.EASE_BOTH);
+        interpolators.put("Ease In", Interpolator.EASE_IN);
+        interpolators.put("Discrete", Interpolator.DISCRETE);
+        interpolators.put("Ease Out", Interpolator.EASE_OUT);
+        interpolators.put("Linear", Interpolator.LINEAR);
+        interpolators.put("Step End", Interpolator.STEP_END);
+        interpolators.put("Step Start", Interpolator.STEP_START);
+        interpolators.put("SP Line", Interpolator.SPLINE(0, 1, 1, 0));
+        interpolators.put("Steps None", Interpolator.STEPS(3, Interpolator.StepPosition.NONE));
+        interpolators.put("Steps Start", Interpolator.STEPS(3, Interpolator.StepPosition.START));
+        interpolators.put("Steps End", Interpolator.STEPS(3, Interpolator.StepPosition.END));
+        interpolators.put("Steps Both", Interpolator.STEPS(3, Interpolator.StepPosition.BOTH));
+        interpolators.put("Tangent", Interpolator.TANGENT(Duration.seconds(1.3), 4));
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(interpolators.keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                scaleTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Scale Transition, Check code notes about how controls are working");
         title.setWrappingWidth(350);
 
         VBox vBox = new VBox(
@@ -256,25 +333,45 @@ public class Animations {
                 durationLabel,
                 durationSlider,
                 durationValue,
-                fromAngleLabel,
-                fromAngleSlider,
-                fromAngleValue,
-                toAngleLabel,
-                toAngleSlider,
-                toAngleValue,
-                angleLabel,
-                angleSlider,
-                angleValue,
+                byYLabel,
+                by_y_slider,
+                byYValue,
+                byZLabel,
+                by_z_slider,
+                byZValue,
+                byXLabel,
+                by_x_slider,
+                byXValue,
+                fromYLabel,
+                from_y_slider,
+                fromYValue,
+                fromZLabel,
+                from_z_slider,
+                fromZValue,
+                fromXLabel,
+                from_x_slider,
+                fromXValue,
+                toYLabel,
+                to_y_slider,
+                toYValue,
+                toZLabel,
+                to_z_slider,
+                toZValue,
+                toXLabel,
+                to_x_slider,
+                toXValue,
                 playLabel,
                 playSlider,
                 playValue,
-                autoReverseCheckBox
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
         );
 
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        rotateTransition.play();
+        scaleTransition.play();
 
         nodes.addAll(node, vBox);
     }
