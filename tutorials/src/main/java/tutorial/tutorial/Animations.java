@@ -1,12 +1,14 @@
 package tutorial.tutorial;
 
 import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
@@ -119,7 +121,18 @@ public class Animations {
 
                 rotateTransition(hexagon, 450, 110, 10, 50);
 
-                rotateTransition(new Cylinder(50, 75, 10), 1200, 250, 750, 50);
+                rotateTransition(new Cylinder(50, 75, 150), 1200, 250, 750, 50);
+            });
+
+            animations.put("ScaleTrans", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                scaleTransition(circle, 450, 110, 10, 50);
+
+                scaleTransition(new Cylinder(50, 75, 10), 1200, 250, 750, 50);
             });
         }
 
@@ -127,24 +140,34 @@ public class Animations {
     }
 
     /**
-     * axis − Specifies the axis of rotation for this RotateTransition.
-     * node − The target node of this RotateTransition.
-     * byAngle − Specifies the incremented stop angle value, from the start, of this RotateTransition.
-     * fromAngle − Specifies the start angle value for this RotateTransition.
-     * toAngle − Specifies the stop angle value for this RotateTransition.
-     * duration − The duration of this RotateTransition.
-
-     * Here we only enable "byAngle", however you can only apply one pair, either "fromAngle" with "toAngle" or "fromAngle"
-     * with "byAngle". There is one exception, you can use "byAngle" alone and in this case the 0 angle is taken as "fromAngle" value
-     * which is what we're doing here, if you want to try other combinations uncomment the property bindings in this function
-
-     * Play with the controls, if animation is not playing or updating, stop it and play it again
+     * byX − Specifies the incremented stop X scale value, from the start, of this ScaleTransition.
+     * byY − Specifies the incremented stop Y scale value, from the start, of this ScaleTransition.
+     * byZ − Specifies the incremented stop Z scale value, from the start, of this ScaleTransition.
+     * duration − The duration of this ScaleTransition
+     * fromX − Specifies the start X scale value of this ScaleTransition.
+     * fromY − Specifies the start Y scale value of this ScaleTransition.
+     * fromZ − Specifies the start Z scale value of this ScaleTransition.
+     * node − The target node of this ScaleTransition.
+     * toX − Specifies the stop X scale value of this ScaleTransition.
+     * toY − The stop Y scale value of this ScaleTransition.
+     * toZ − The stop Z scale value of this ScaleTransition.
      */
-    private void rotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
-//        Translate translate = new Translate(nodeTranslationX, nodeTranslationY);
-//        node.getTransforms().add(translate);
+    private void scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
+
+        ScaleTransition scaleTransition = new ScaleTransition();
+        scaleTransition.setDuration(Duration.millis(1000));
+        scaleTransition.setNode(node);
+        scaleTransition.setByY(1.5);
+        scaleTransition.setByX(1.5);
+        scaleTransition.setCycleCount(50);
+
+        //Setting auto reverse value to true
+        scaleTransition.setAutoReverse(false);
+
+        //Playing the animation
+        scaleTransition.play();
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setNode(node);
@@ -245,6 +268,158 @@ public class Animations {
                 playLabel,
                 playSlider,
                 playValue,
+                autoReverseCheckBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        rotateTransition.play();
+
+        nodes.addAll(node, vBox);
+    }
+
+    /**
+     * axis − Specifies the axis of rotation for this RotateTransition.
+     * node − The target node of this RotateTransition.
+     * byAngle − Specifies the incremented stop angle value, from the start, of this RotateTransition.
+     * fromAngle − Specifies the start angle value for this RotateTransition.
+     * toAngle − Specifies the stop angle value for this RotateTransition.
+     * duration − The duration of this RotateTransition.
+
+     * Here we only enable "byAngle", however you can only apply one pair, either "fromAngle" with "toAngle" or "fromAngle"
+     * with "byAngle". There is one exception, you can use "byAngle" alone and in this case the 0 angle is taken as "fromAngle" value
+     * which is what we're doing here, if you want to try other combinations uncomment the property bindings in this function
+
+     * Play with the controls, if animation is not playing or updating, stop it and play it again
+     */
+    private void rotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+//        Translate translate = new Translate(nodeTranslationX, nodeTranslationY);
+//        node.getTransforms().add(translate);
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+        RotateTransition rotateTransition = new RotateTransition();
+        rotateTransition.setNode(node);
+        rotateTransition.setCycleCount(RotateTransition.INDEFINITE);
+
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 20, 0);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 0s");
+        durationSlider.setBlockIncrement(0.1);
+
+//        rotateTransition.setDuration(Duration.millis(1000));
+        rotateTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+        Slider angleSlider = new Slider(-720, 720, 0);
+        Label angleLabel = new Label("ByAngle");
+        Label angleValue = new Label("Value: 0");
+        angleSlider.setBlockIncrement(1);
+
+//        rotateTransition.setByAngle(360);
+        rotateTransition.byAngleProperty().bind(angleSlider.valueProperty());
+        angleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            angleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider fromAngleSlider = new Slider(-720, 720, 0);
+        Label fromAngleLabel = new Label("FromAngle");
+        Label fromAngleValue = new Label("Value: 0");
+        fromAngleSlider.setBlockIncrement(1);
+
+//        rotateTransition.setFromAngle(360);
+//        rotateTransition.fromAngleProperty().bind(fromAngleSlider.valueProperty());
+        fromAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromAngleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider toAngleSlider = new Slider(-720, 720, 0);
+        Label toAngleLabel = new Label("ToAngle");
+        Label toAngleValue = new Label("Value: 0");
+        toAngleSlider.setBlockIncrement(1);
+
+//        rotateTransition.setByAngle(360);
+//        rotateTransition.toAngleProperty().bind(toAngleSlider.valueProperty());
+        toAngleSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toAngleValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //rotateTransition.setAutoReverse(false);
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        rotateTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    rotateTransition.stop();
+                }
+                case 1 -> {
+                    rotateTransition.pause();
+                }
+                case 2 -> {
+                    rotateTransition.play();
+                }
+            }
+        });
+
+        ObjectProperty<Point3D> axis = new SimpleObjectProperty<>(Rotate.X_AXIS);
+
+        Slider axisSlider = new Slider(0, 3, 0);
+        Label axisLabel = new Label("Axis, 0/X, 1/Y, 2/Z, 3 Sample XYZ point");
+        Label axisValue = new Label("Value: 0");
+        axisSlider.setBlockIncrement(1);
+
+        rotateTransition.axisProperty().bind(axis);
+        axisSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            axisValue.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> axis.setValue(Rotate.X_AXIS);
+                case 1 -> axis.setValue(Rotate.Y_AXIS);
+                case 2 -> axis.setValue(Rotate.Z_AXIS);
+                case 3 -> axis.setValue(new Point3D(5, 10, 20));
+            }
+        });
+
+        Text title = new Text("RotateTrans Controls(check function notes, by default this example only uses \"byAngle\", you have to uncomment code if you want to use the other properties)");
+        title.setWrappingWidth(350);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                fromAngleLabel,
+                fromAngleSlider,
+                fromAngleValue,
+                toAngleLabel,
+                toAngleSlider,
+                toAngleValue,
+                angleLabel,
+                angleSlider,
+                angleValue,
+                playLabel,
+                playSlider,
+                playValue,
+                axisLabel,
+                axisSlider,
+                axisValue,
                 autoReverseCheckBox
         );
 
