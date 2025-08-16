@@ -7,26 +7,19 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point3D;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.*;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Shear;
-import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -120,20 +113,20 @@ public class Animations {
                 //Setting the fill color for the hexagon
                 hexagon.setFill(Color.BLUE);
 
-                rotateTransition(hexagon, 450, 110, 10, 50);
+                rotateTransition(hexagon, 325, 110, 10, 50);
 
-                rotateTransition(new Cylinder(50, 75, 150), 1200, 250, 750, 50);
+                rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50);
             });
 
-            animations.put("ScaleTrans", () -> {
+            animations.put("Scale&Rotate", () -> {
                 Circle circle = new Circle();
                 circle.setRadius(50.0);
                 circle.setFill(Color.BROWN);
                 circle.setStrokeWidth(20);
 
-                scaleTransition(circle, 450, 110, 10, 50);
+                scaleNRotateTransition(circle, 450, 250, 10, 50);
 
-                scaleTransition(new Cylinder(50, 75, 10), 1200, 250, 750, 50);
+                scaleNRotateTransition(new Cylinder(50, 75, 10), 1100, 250, 680, 50);
             });
         }
 
@@ -158,9 +151,11 @@ public class Animations {
      * we will use the "by" variables only if you want to try setting up other variables please uncomment the proper code
      * in this function
      */
-    private void scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private void scaleNRotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
+
+        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
 
         ScaleTransition scaleTransition = new ScaleTransition();
         scaleTransition.setNode(node);
@@ -183,7 +178,7 @@ public class Animations {
         //==================================== BY XYZ VALUES
         Slider by_x_slider = new Slider(-10, 10, 1);
         Label byXLabel = new Label("By X");
-        Label byXValue = new Label("Value: 0");
+        Label byXValue = new Label("Value: 1");
         by_x_slider.setBlockIncrement(1);
 
         scaleTransition.byXProperty().bind(by_x_slider.valueProperty());
@@ -193,7 +188,7 @@ public class Animations {
 
         Slider by_y_slider = new Slider(-10, 10, 1);
         Label byYLabel = new Label("By Y");
-        Label byYValue = new Label("Value: 0");
+        Label byYValue = new Label("Value: 1");
         by_y_slider.setBlockIncrement(1);
 
         scaleTransition.byYProperty().bind(by_y_slider.valueProperty());
@@ -203,7 +198,7 @@ public class Animations {
 
         Slider by_z_slider = new Slider(-10, 10, 1);
         Label byZLabel = new Label("By Z");
-        Label byZValue = new Label("Value: 0");
+        Label byZValue = new Label("Value: 1");
         by_z_slider.setBlockIncrement(1);
 
         scaleTransition.byZProperty().bind(by_z_slider.valueProperty());
@@ -214,7 +209,7 @@ public class Animations {
         //======================================= FROM XYZ VALUES
         Slider from_x_slider = new Slider(-10, 10, 1);
         Label fromXLabel = new Label("From X");
-        Label fromXValue = new Label("Value: 0");
+        Label fromXValue = new Label("Value: 1");
         from_x_slider.setBlockIncrement(1);
 
         scaleTransition.fromXProperty().bind(from_x_slider.valueProperty());
@@ -224,7 +219,7 @@ public class Animations {
 
         Slider from_y_slider = new Slider(-10, 10, 1);
         Label fromYLabel = new Label("From Y");
-        Label fromYValue = new Label("Value: 0");
+        Label fromYValue = new Label("Value: 1");
         from_y_slider.setBlockIncrement(1);
 
         scaleTransition.fromYProperty().bind(from_y_slider.valueProperty());
@@ -234,7 +229,7 @@ public class Animations {
 
         Slider from_z_slider = new Slider(-10, 10, 1);
         Label fromZLabel = new Label("From Z");
-        Label fromZValue = new Label("Value: 0");
+        Label fromZValue = new Label("Value: 1");
         from_z_slider.setBlockIncrement(1);
 
         scaleTransition.fromZProperty().bind(from_z_slider.valueProperty());
@@ -245,7 +240,7 @@ public class Animations {
         //======================================= TO XYZ VALUES
         Slider to_x_slider = new Slider(-10, 10, 1);
         Label toXLabel = new Label("To X");
-        Label toXValue = new Label("Value: 0");
+        Label toXValue = new Label("Value: 1");
         to_x_slider.setBlockIncrement(1);
 
         scaleTransition.toXProperty().bind(to_x_slider.valueProperty());
@@ -255,7 +250,7 @@ public class Animations {
 
         Slider to_y_slider = new Slider(-10, 10, 1);
         Label toYLabel = new Label("To Y");
-        Label toYValue = new Label("Value: 0");
+        Label toYValue = new Label("Value: 1");
         to_y_slider.setBlockIncrement(1);
 
         scaleTransition.toYProperty().bind(to_y_slider.valueProperty());
@@ -265,7 +260,7 @@ public class Animations {
 
         Slider to_z_slider = new Slider(-10, 10, 1);
         Label toZLabel = new Label("To Z");
-        Label toZValue = new Label("Value: 0");
+        Label toZValue = new Label("Value: 1");
         to_z_slider.setBlockIncrement(1);
 
         scaleTransition.toZProperty().bind(to_z_slider.valueProperty());
@@ -325,7 +320,7 @@ public class Animations {
         });
 
         Text title = new Text("Scale Transition, Check code notes about how controls are working");
-        title.setWrappingWidth(350);
+        title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
                 title,
@@ -333,33 +328,33 @@ public class Animations {
                 durationLabel,
                 durationSlider,
                 durationValue,
+                byXLabel,
+                by_x_slider,
+                byXValue,
                 byYLabel,
                 by_y_slider,
                 byYValue,
                 byZLabel,
                 by_z_slider,
                 byZValue,
-                byXLabel,
-                by_x_slider,
-                byXValue,
+                fromXLabel,
+                from_x_slider,
+                fromXValue,
                 fromYLabel,
                 from_y_slider,
                 fromYValue,
                 fromZLabel,
                 from_z_slider,
                 fromZValue,
-                fromXLabel,
-                from_x_slider,
-                fromXValue,
+                toXLabel,
+                to_x_slider,
+                toXValue,
                 toYLabel,
                 to_y_slider,
                 toYValue,
                 toZLabel,
                 to_z_slider,
                 toZValue,
-                toXLabel,
-                to_x_slider,
-                toXValue,
                 playLabel,
                 playSlider,
                 playValue,
@@ -373,7 +368,7 @@ public class Animations {
 
         scaleTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
     }
 
     /**
@@ -494,7 +489,7 @@ public class Animations {
         });
 
         Text title = new Text("RotateTrans Controls(check function notes, by default this example only uses \"byAngle\", you have to uncomment code if you want to use the other properties)");
-        title.setWrappingWidth(350);
+        title.setWrappingWidth(200);
 
         VBox vBox = new VBox(
                 title,
