@@ -159,6 +159,17 @@ public class Animations {
                 // this animation seems to not work on Shape3D objects
                 fillTransition(circle, 300, 250, 10, 50);
             });
+
+            animations.put("Stroke Transition", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(10);
+                circle.setStrokeType(StrokeType.CENTERED);
+
+                // this animation seems to not work on Shape3D objects
+                strokeTransition(circle, 300, 250, 10, 50);
+            });
         }
 
         return animations;
@@ -187,7 +198,152 @@ public class Animations {
     }
 
     /**
+     * Doesn't work with Shape3D objects
+
+     * A shape in JavaFX can consist of three types of strokes: inside, outside and centered; with different properties
+     * applied to it. This transition is ignorant to the property of a stroke and instead just changes its color over a
+     * course of duration specified.
+
+     * duration − The duration of this StrokeTransition.
+     * shape − The target shape of this StrokeTransition.
+     * fromValue − Specifies the start color value for this StrokeTransition.
+     * toValue − Specifies the stop color value for this StrokeTransition.
+     */
+    private void strokeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+
+        StrokeTransition strokeTransition = new StrokeTransition();
+        strokeTransition.setShape((Shape)node);
+        strokeTransition.setCycleCount(FillTransition.INDEFINITE);
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        strokeTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+
+        //======================================= FROM VALUES
+        Slider from_paint_slider = new Slider(0, 2, 0);
+        ObjectProperty<Color> paintFrom = new SimpleObjectProperty<>(Color.RED);
+        Label from_paint_Label = new Label("From property, 0/RED, \n1/BLUE, 2/PINK");
+        Label from_paint_Value = new Label("Value: 0");
+        from_paint_slider.setBlockIncrement(1);
+
+        strokeTransition.fromValueProperty().bind(paintFrom);
+        from_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            from_paint_Value.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> paintFrom.setValue(Color.RED);
+                case 1 -> paintFrom.setValue(Color.BLUE);
+                case 2 -> paintFrom.setValue(Color.PINK);
+            }
+        });
+
+        //======================================= TO VALUES
+        Slider to_paint_slider = new Slider(0, 2, 1);
+        ObjectProperty<Color> paintTo = new SimpleObjectProperty<>(Color.BLUEVIOLET);
+        Label to_paint_Label = new Label("To property, 0/GRAY,\n1/BLUEVIOLET, 2/PURPLE");
+        Label to_paint_Value = new Label("Value: 1");
+        to_paint_slider.setBlockIncrement(1);
+
+        strokeTransition.toValueProperty().bind(paintTo);
+        to_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            to_paint_Value.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> paintTo.setValue(Color.GRAY);
+                case 1 -> paintTo.setValue(Color.BLUEVIOLET);
+                case 2 -> paintTo.setValue(Color.PURPLE);
+            }
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        strokeTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    strokeTransition.stop();
+                }
+                case 1 -> {
+                    strokeTransition.pause();
+                }
+                case 2 -> {
+                    strokeTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                strokeTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("FIll Transition, doesn't work with Shape3D");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                from_paint_Label,
+                from_paint_slider,
+                from_paint_Value,
+                to_paint_Label,
+                to_paint_slider,
+                to_paint_Value,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        strokeTransition.play();
+
+        nodes.addAll(node, vBox);
+    }
+
+    /**
      * This animation doesn't work with Shape3D objects
+
+     * duration − The duration of this FillTransition.
+     * shape − The target shape of this FillTransition.
+     * fromValue − Specifies the start color value for this FillTransition.
+     * toValue − Specifies the stop color value for this FillTransition.
      */
     private void fillTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
         node.setLayoutX(nodeTranslationX);
