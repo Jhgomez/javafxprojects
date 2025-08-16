@@ -1,9 +1,6 @@
 package tutorial.tutorial;
 
-import javafx.animation.Interpolator;
-import javafx.animation.RotateTransition;
-import javafx.animation.ScaleTransition;
-import javafx.animation.TranslateTransition;
+import javafx.animation.*;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -82,6 +79,7 @@ public class Animations {
 
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
+        // Without perspective camera the Z axis animations wont be sometimes visible in different situations
         PerspectiveCamera camera = new PerspectiveCamera();
 
         scene.setCamera(camera);
@@ -141,6 +139,16 @@ public class Animations {
 
                 translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
             });
+
+            animations.put("FadeTrans", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                // this animation seems to not work on Shape3D objects
+                fadeTransition(circle, 300, 250, 10, 50);
+            });
         }
 
         return animations;
@@ -166,6 +174,152 @@ public class Animations {
         }
 
         return interpolators;
+    }
+
+    /**
+     * A Fade transition is a type of a geometrical transition that changes the opacity property of an object. Using fade
+     * transition, you can either reduce the opacity of the object or increase it. This transition is known as a geometrical
+     * transition as it deals with the geometry of an object.
+
+     * byValue − Specifies the incremented stop opacity value, from the start, of this FadeTransition.
+     * duration − The duration of this FadeTransition.
+     * fromValue − Specifies the start opacity value for this FadeTransition.
+     * node − The target node of this Transition.
+     * toValue − Specifies the stop opacity value for this FadeTransition.
+
+     * This animation has the same behaviour as every else, you can configure it using "from" and "to", or "from" and
+     * "by" pairs. The exception is only setting/using "by" alone and the "from" is the node natural/start/original
+     * position by default and is what we do in our example, only setting "by" alone, if you want to try the other settings
+     * uncomment binding code in this function
+
+     * This animation seems to not work on Shape3D objects
+     */
+    private void fadeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+
+        FadeTransition fadeTransition = new FadeTransition();
+        fadeTransition.setNode(node);
+        fadeTransition.setCycleCount(ScaleTransition.INDEFINITE);
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        fadeTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+        //==================================== BY VALUES
+        Slider by_x_slider = new Slider(-1, 1, -1);
+        Label byXLabel = new Label("By property");
+        Label byXValue = new Label("Value: -1");
+        by_x_slider.setBlockIncrement(0.1);
+
+        fadeTransition.byValueProperty().bind(by_x_slider.valueProperty());
+        by_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byXValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+        });
+
+
+        //======================================= FROM VALUES
+        Slider from_x_slider = new Slider(0, 1, 0);
+        Label fromXLabel = new Label("From property");
+        Label fromXValue = new Label("Value: 0");
+        from_x_slider.setBlockIncrement(.1);
+
+//        fadeTransition.fromValueProperty().bind(from_x_slider.valueProperty());
+        from_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromXValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+        });
+
+        //======================================= TO VALUES
+        Slider to_x_slider = new Slider(0, 1, 1);
+        Label toXLabel = new Label("To property");
+        Label toXValue = new Label("Value: 1");
+        to_x_slider.setBlockIncrement(.1);
+
+//        fadeTransition.toValueProperty().bind(to_x_slider.valueProperty());
+        to_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toXValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        fadeTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    fadeTransition.stop();
+                }
+                case 1 -> {
+                    fadeTransition.pause();
+                }
+                case 2 -> {
+                    fadeTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                fadeTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Translate Transition, Check code notes about how controls are working");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                byXLabel,
+                by_x_slider,
+                byXValue,
+                fromXLabel,
+                from_x_slider,
+                fromXValue,
+                toXLabel,
+                to_x_slider,
+                toXValue,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        fadeTransition.play();
+
+        nodes.addAll(node, vBox);
     }
 
     /**
