@@ -99,7 +99,7 @@ public class Animations {
         if (animations == null) {
             animations = new HashMap<>();
 
-            animations.put("RotateTrans", () -> {
+            animations.put("Rotate Transition", () -> {
                 Polygon hexagon = new Polygon();
 
                 hexagon.getPoints().addAll(
@@ -118,7 +118,7 @@ public class Animations {
                 rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50);
             });
 
-            animations.put("ScaleTrans", () -> {
+            animations.put("Scale Transition", () -> {
                 Circle circle = new Circle();
                 circle.setRadius(50.0);
                 circle.setFill(Color.BROWN);
@@ -129,7 +129,7 @@ public class Animations {
                 scaleTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
             });
 
-            animations.put("TranslateTrans", () -> {
+            animations.put("Translate Transition", () -> {
                 Circle circle = new Circle();
                 circle.setRadius(50.0);
                 circle.setFill(Color.BROWN);
@@ -140,7 +140,7 @@ public class Animations {
                 translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
             });
 
-            animations.put("FadeTrans", () -> {
+            animations.put("Fade Transition", () -> {
                 Circle circle = new Circle();
                 circle.setRadius(50.0);
                 circle.setFill(Color.BROWN);
@@ -148,6 +148,16 @@ public class Animations {
 
                 // this animation seems to not work on Shape3D objects
                 fadeTransition(circle, 300, 250, 10, 50);
+            });
+
+            animations.put("Fill Transition", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                // this animation seems to not work on Shape3D objects
+                fillTransition(circle, 300, 250, 10, 50);
             });
         }
 
@@ -174,6 +184,137 @@ public class Animations {
         }
 
         return interpolators;
+    }
+
+    /**
+     * This animation doesn't work with Shape3D objects
+     */
+    private void fillTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+
+        FillTransition fillTransition = new FillTransition();
+        fillTransition.setShape((Shape)node);
+        fillTransition.setCycleCount(FillTransition.INDEFINITE);
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        fillTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+
+        //======================================= FROM VALUES
+        Slider from_paint_slider = new Slider(0, 2, 0);
+        ObjectProperty<Color> paintFrom = new SimpleObjectProperty<>(Color.RED);
+        Label from_paint_Label = new Label("From property, 0/RED, \n1/BLUE, 2/PINK");
+        Label from_paint_Value = new Label("Value: 0");
+        from_paint_slider.setBlockIncrement(1);
+
+        fillTransition.fromValueProperty().bind(paintFrom);
+        from_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            from_paint_Value.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> paintFrom.setValue(Color.RED);
+                case 1 -> paintFrom.setValue(Color.BLUE);
+                case 2 -> paintFrom.setValue(Color.PINK);
+            }
+        });
+
+        //======================================= TO VALUES
+        Slider to_paint_slider = new Slider(0, 2, 1);
+        ObjectProperty<Color> paintTo = new SimpleObjectProperty<>(Color.BLUEVIOLET);
+        Label to_paint_Label = new Label("To property, 0/GRAY,\n1/BLUEVIOLET, 2/PURPLE");
+        Label to_paint_Value = new Label("Value: 1");
+        to_paint_slider.setBlockIncrement(1);
+
+        fillTransition.toValueProperty().bind(paintTo);
+        to_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            to_paint_Value.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> paintTo.setValue(Color.GRAY);
+                case 1 -> paintTo.setValue(Color.BLUEVIOLET);
+                case 2 -> paintTo.setValue(Color.PURPLE);
+            }
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        fillTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    fillTransition.stop();
+                }
+                case 1 -> {
+                    fillTransition.pause();
+                }
+                case 2 -> {
+                    fillTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                fillTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("FIll Transition, doesn't work with Shape3D");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                from_paint_Label,
+                from_paint_slider,
+                from_paint_Value,
+                to_paint_Label,
+                to_paint_slider,
+                to_paint_Value,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        fillTransition.play();
+
+        nodes.addAll(node, vBox);
     }
 
     /**
@@ -716,7 +857,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("Scale Transition, Check code notes about how controls are working");
+        Text title = new Text("Fade Transition, Check code notes about how controls are working");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
