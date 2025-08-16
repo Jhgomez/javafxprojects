@@ -3,6 +3,7 @@ package tutorial.tutorial;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -40,6 +41,7 @@ public class Animations {
     ObservableList<Node> nodes;
     HashMap<String, Runnable> animations;
     Scene scene;
+    HashMap<String, Interpolator> interpolators;
 
     public void displayScreen(Runnable runnable) {
         ScrollPane scrollPane = new ScrollPane();
@@ -118,19 +120,275 @@ public class Animations {
                 rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50);
             });
 
-            animations.put("Scale&Rotate", () -> {
+            animations.put("ScaleTrans", () -> {
                 Circle circle = new Circle();
                 circle.setRadius(50.0);
                 circle.setFill(Color.BROWN);
                 circle.setStrokeWidth(20);
 
-                scaleNRotateTransition(circle, 450, 250, 10, 50);
+                scaleTransition(circle, 300, 250, 10, 50);
 
-                scaleNRotateTransition(new Cylinder(50, 75, 10), 1100, 250, 680, 50);
+                scaleTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
+            });
+
+            animations.put("TranslateTrans", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                translateTransition(circle, 300, 250, 10, 50);
+
+                translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
             });
         }
 
         return animations;
+    }
+
+    private HashMap<String, Interpolator> getInterpolators() {
+        if (interpolators == null) {
+            interpolators = new HashMap<>();
+
+            interpolators.put("Ease Both", Interpolator.EASE_BOTH);
+            interpolators.put("Ease In", Interpolator.EASE_IN);
+            interpolators.put("Discrete", Interpolator.DISCRETE);
+            interpolators.put("Ease Out", Interpolator.EASE_OUT);
+            interpolators.put("Linear", Interpolator.LINEAR);
+            interpolators.put("Step End", Interpolator.STEP_END);
+            interpolators.put("Step Start", Interpolator.STEP_START);
+            interpolators.put("SP Line", Interpolator.SPLINE(0, 1, 1, 0));
+            interpolators.put("Steps None", Interpolator.STEPS(3, Interpolator.StepPosition.NONE));
+            interpolators.put("Steps Start", Interpolator.STEPS(3, Interpolator.StepPosition.START));
+            interpolators.put("Steps End", Interpolator.STEPS(3, Interpolator.StepPosition.END));
+            interpolators.put("Steps Both", Interpolator.STEPS(3, Interpolator.StepPosition.BOTH));
+            interpolators.put("Tangent", Interpolator.TANGENT(Duration.seconds(1.3), 4));
+        }
+
+        return interpolators;
+    }
+
+    /**
+     * byX − Specifies the incremented stop X coordinate value, from the start, of this TranslateTransition.
+     * byY − Specifies the incremented stop Y coordinate value, from the start, of this TranslateTransition.
+     * byZ − Specifies the incremented stop Z coordinate value, from the start, of this TranslateTransition.
+     * duration − The duration of this TranslateTransition
+     * fromX − Specifies the start X coordinate value of this TranslateTransition.
+     * fromY − Specifies the start Y coordinate value of this TranslateTransition.
+     * fromZ − Specifies the start Z coordinate value of this TranslateTransition.
+     * node − The target node of this TranslateTransition.
+     * toX − Specifies the stop X coordinate value of this TranslateTransition.
+     * toY − The stop Y coordinate value of this TranslateTransition.
+     * toZ − The stop Z coordinate value of this TranslateTransition.
+
+     * This animation has the same behaviour as every else, you can configure it using "from" and "to", or "from" and
+     * "by" pairs. The exception is only setting/using "by" alone and the "from" is the node natural/start/original
+     * position by default and is what we do in our example, only setting "by" alone, if you want to try the other settings
+     * uncomment binding code in this function
+     */
+    private void translateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+
+        TranslateTransition translateTransition = new TranslateTransition();
+        translateTransition.setNode(node);
+        translateTransition.setCycleCount(ScaleTransition.INDEFINITE);
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        translateTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+        //==================================== BY XYZ VALUES
+        Slider by_x_slider = new Slider(-1000, 1000, 100);
+        Label byXLabel = new Label("By X");
+        Label byXValue = new Label("Value: 100");
+        by_x_slider.setBlockIncrement(50);
+
+        translateTransition.byXProperty().bind(by_x_slider.valueProperty());
+        by_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byXValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider by_y_slider = new Slider(-1000, 1000, 100);
+        Label byYLabel = new Label("By Y");
+        Label byYValue = new Label("Value: 100");
+        by_y_slider.setBlockIncrement(50);
+
+        translateTransition.byYProperty().bind(by_y_slider.valueProperty());
+        by_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byYValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider by_z_slider = new Slider(-1000, 1000, 100);
+        Label byZLabel = new Label("By Z");
+        Label byZValue = new Label("Value: 100");
+        by_z_slider.setBlockIncrement(50);
+
+        translateTransition.byZProperty().bind(by_z_slider.valueProperty());
+        by_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            byZValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //======================================= FROM XYZ VALUES
+        Slider from_x_slider = new Slider(-1000, 1000, 1);
+        Label fromXLabel = new Label("From X");
+        Label fromXValue = new Label("Value: 1");
+        from_x_slider.setBlockIncrement(50);
+
+//        translateTransition.fromXProperty().bind(from_x_slider.valueProperty());
+        from_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromXValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider from_y_slider = new Slider(-1000, 1000, 1);
+        Label fromYLabel = new Label("From Y");
+        Label fromYValue = new Label("Value: 1");
+        from_y_slider.setBlockIncrement(50);
+
+//        translateTransition.fromYProperty().bind(from_y_slider.valueProperty());
+        from_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromYValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider from_z_slider = new Slider(-1000, 1000, 1);
+        Label fromZLabel = new Label("From Z");
+        Label fromZValue = new Label("Value: 1");
+        from_z_slider.setBlockIncrement(50);
+
+//        translateTransition.fromZProperty().bind(from_z_slider.valueProperty());
+        from_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            fromZValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //======================================= TO XYZ VALUES
+        Slider to_x_slider = new Slider(-1000, 1000, 100);
+        Label toXLabel = new Label("To X");
+        Label toXValue = new Label("Value: 100");
+        to_x_slider.setBlockIncrement(50);
+
+//        translateTransition.toXProperty().bind(to_x_slider.valueProperty());
+        to_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toXValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider to_y_slider = new Slider(-1000, 1000, 100);
+        Label toYLabel = new Label("To Y");
+        Label toYValue = new Label("Value: 100");
+        to_y_slider.setBlockIncrement(50);
+
+//        translateTransition.toYProperty().bind(to_y_slider.valueProperty());
+        to_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toYValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        Slider to_z_slider = new Slider(-1000, 1000, 100);
+        Label toZLabel = new Label("To Z");
+        Label toZValue = new Label("Value: 100");
+        to_z_slider.setBlockIncrement(50);
+
+//        translateTransition.toZProperty().bind(to_z_slider.valueProperty());
+        to_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            toZValue.setText(String.format("Value: %d ", newValue.intValue()));
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        translateTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    translateTransition.stop();
+                }
+                case 1 -> {
+                    translateTransition.pause();
+                }
+                case 2 -> {
+                    translateTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                translateTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Translate Transition, Check code notes about how controls are working");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                byXLabel,
+                by_x_slider,
+                byXValue,
+                byYLabel,
+                by_y_slider,
+                byYValue,
+                byZLabel,
+                by_z_slider,
+                byZValue,
+                fromXLabel,
+                from_x_slider,
+                fromXValue,
+                fromYLabel,
+                from_y_slider,
+                fromYValue,
+                fromZLabel,
+                from_z_slider,
+                fromZValue,
+                toXLabel,
+                to_x_slider,
+                toXValue,
+                toYLabel,
+                to_y_slider,
+                toYValue,
+                toZLabel,
+                to_z_slider,
+                toZValue,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        translateTransition.play();
+
+        nodes.addAll(node, vBox);
     }
 
     /**
@@ -151,11 +409,11 @@ public class Animations {
      * we will use the "by" variables only if you want to try setting up other variables please uncomment the proper code
      * in this function
      */
-    private void scaleNRotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private void scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
-        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
 
         ScaleTransition scaleTransition = new ScaleTransition();
         scaleTransition.setNode(node);
@@ -164,9 +422,9 @@ public class Animations {
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
 
-        Slider durationSlider = new Slider(0, 100, 0);
+        Slider durationSlider = new Slider(0, 100, 0.167);
         Label durationLabel = new Label("Duration");
-        Label durationValue = new Label("Value: 0s");
+        Label durationValue = new Label("Value: 1s");
         durationSlider.setBlockIncrement(0.1);
 
         scaleTransition.durationProperty().bind(duration);
@@ -212,7 +470,7 @@ public class Animations {
         Label fromXValue = new Label("Value: 1");
         from_x_slider.setBlockIncrement(1);
 
-        scaleTransition.fromXProperty().bind(from_x_slider.valueProperty());
+//        scaleTransition.fromXProperty().bind(from_x_slider.valueProperty());
         from_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             fromXValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -222,7 +480,7 @@ public class Animations {
         Label fromYValue = new Label("Value: 1");
         from_y_slider.setBlockIncrement(1);
 
-        scaleTransition.fromYProperty().bind(from_y_slider.valueProperty());
+//        scaleTransition.fromYProperty().bind(from_y_slider.valueProperty());
         from_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             fromYValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -232,7 +490,7 @@ public class Animations {
         Label fromZValue = new Label("Value: 1");
         from_z_slider.setBlockIncrement(1);
 
-        scaleTransition.fromZProperty().bind(from_z_slider.valueProperty());
+//        scaleTransition.fromZProperty().bind(from_z_slider.valueProperty());
         from_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             fromZValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -243,7 +501,7 @@ public class Animations {
         Label toXValue = new Label("Value: 1");
         to_x_slider.setBlockIncrement(1);
 
-        scaleTransition.toXProperty().bind(to_x_slider.valueProperty());
+//        scaleTransition.toXProperty().bind(to_x_slider.valueProperty());
         to_x_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             toXValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -253,7 +511,7 @@ public class Animations {
         Label toYValue = new Label("Value: 1");
         to_y_slider.setBlockIncrement(1);
 
-        scaleTransition.toYProperty().bind(to_y_slider.valueProperty());
+//        scaleTransition.toYProperty().bind(to_y_slider.valueProperty());
         to_y_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             toYValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -263,7 +521,7 @@ public class Animations {
         Label toZValue = new Label("Value: 1");
         to_z_slider.setBlockIncrement(1);
 
-        scaleTransition.toZProperty().bind(to_z_slider.valueProperty());
+//        scaleTransition.toZProperty().bind(to_z_slider.valueProperty());
         to_z_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             toZValue.setText(String.format("Value: %d ", newValue.intValue()));
         });
@@ -295,22 +553,7 @@ public class Animations {
             }
         });
 
-        HashMap<String, Interpolator> interpolators = new HashMap<>();
-        interpolators.put("Ease Both", Interpolator.EASE_BOTH);
-        interpolators.put("Ease In", Interpolator.EASE_IN);
-        interpolators.put("Discrete", Interpolator.DISCRETE);
-        interpolators.put("Ease Out", Interpolator.EASE_OUT);
-        interpolators.put("Linear", Interpolator.LINEAR);
-        interpolators.put("Step End", Interpolator.STEP_END);
-        interpolators.put("Step Start", Interpolator.STEP_START);
-        interpolators.put("SP Line", Interpolator.SPLINE(0, 1, 1, 0));
-        interpolators.put("Steps None", Interpolator.STEPS(3, Interpolator.StepPosition.NONE));
-        interpolators.put("Steps Start", Interpolator.STEPS(3, Interpolator.StepPosition.START));
-        interpolators.put("Steps End", Interpolator.STEPS(3, Interpolator.StepPosition.END));
-        interpolators.put("Steps Both", Interpolator.STEPS(3, Interpolator.StepPosition.BOTH));
-        interpolators.put("Tangent", Interpolator.TANGENT(Duration.seconds(1.3), 4));
-
-        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(interpolators.keySet()));
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
         interpolatorComboBox.setPromptText("Choose Interpolator");
 
         interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -368,7 +611,7 @@ public class Animations {
 
         scaleTransition.play();
 
-        nodes.add(vBox);
+        nodes.addAll(node, vBox);
     }
 
     /**
@@ -397,9 +640,9 @@ public class Animations {
 
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
 
-        Slider durationSlider = new Slider(0, 20, 0);
+        Slider durationSlider = new Slider(0, 20, 0.167);
         Label durationLabel = new Label("Duration");
-        Label durationValue = new Label("Value: 0s");
+        Label durationValue = new Label("Value: 1s");
         durationSlider.setBlockIncrement(0.1);
 
 //        rotateTransition.setDuration(Duration.millis(1000));
@@ -409,9 +652,9 @@ public class Animations {
             durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
         });
 
-        Slider angleSlider = new Slider(-720, 720, 0);
+        Slider angleSlider = new Slider(-720, 720, 90);
         Label angleLabel = new Label("ByAngle");
-        Label angleValue = new Label("Value: 0");
+        Label angleValue = new Label("Value: 90");
         angleSlider.setBlockIncrement(1);
 
 //        rotateTransition.setByAngle(360);
@@ -488,6 +731,15 @@ public class Animations {
             }
         });
 
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                rotateTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
         Text title = new Text("RotateTrans Controls(check function notes, by default this example only uses \"byAngle\", you have to uncomment code if you want to use the other properties)");
         title.setWrappingWidth(200);
 
@@ -512,7 +764,9 @@ public class Animations {
                 axisLabel,
                 axisSlider,
                 axisValue,
-                autoReverseCheckBox
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
         );
 
         vBox.setLayoutX(boardX);
