@@ -113,9 +113,9 @@ public class Animations {
                 //Setting the fill color for the hexagon
                 hexagon.setFill(Color.BLUE);
 
-                rotateTransition(hexagon, 325, 110, 10, 50);
+                rotateTransition(hexagon, 325, 110, 10, 50, RotateTransition.INDEFINITE).play();
 
-                rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50);
+                rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50, RotateTransition.INDEFINITE).play();
             });
 
             animations.put("Scale Transition", () -> {
@@ -124,9 +124,9 @@ public class Animations {
                 circle.setFill(Color.BROWN);
                 circle.setStrokeWidth(20);
 
-                scaleTransition(circle, 300, 250, 10, 50);
+                scaleTransition(circle, 300, 250, 10, 50, ScaleTransition.INDEFINITE).play();
 
-                scaleTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
+                scaleTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50, ScaleTransition.INDEFINITE).play();
             });
 
             animations.put("Translate Transition", () -> {
@@ -135,9 +135,9 @@ public class Animations {
                 circle.setFill(Color.BROWN);
                 circle.setStrokeWidth(20);
 
-                translateTransition(circle, 300, 250, 10, 50);
+                translateTransition(circle, 300, 250, 10, 50, TranslateTransition.INDEFINITE).play();
 
-                translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50);
+                translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50, TranslateTransition.INDEFINITE).play();
             });
 
             animations.put("Fade Transition", () -> {
@@ -147,7 +147,7 @@ public class Animations {
                 circle.setStrokeWidth(20);
 
                 // this animation seems to not work on Shape3D objects
-                fadeTransition(circle, 300, 250, 10, 50);
+                fadeTransition(circle, 300, 250, 10, 50, FadeTransition.INDEFINITE).play();
             });
 
             animations.put("Fill Transition", () -> {
@@ -157,7 +157,7 @@ public class Animations {
                 circle.setStrokeWidth(20);
 
                 // this animation seems to not work on Shape3D objects
-                fillTransition(circle, 300, 250, 10, 50);
+                fillTransition(circle, 300, 250, 10, 50, FillTransition.INDEFINITE).play();
             });
 
             animations.put("Stroke Transition", () -> {
@@ -168,7 +168,18 @@ public class Animations {
                 circle.setStrokeType(StrokeType.CENTERED);
 
                 // this animation seems to not work on Shape3D objects
-                strokeTransition(circle, 300, 250, 10, 50);
+                strokeTransition(circle, 300, 250, 10, 50, StrokeTransition.INDEFINITE).play();
+            });
+
+            animations.put("Sequential Transition", () -> {
+                Circle circle = new Circle();
+                circle.setCenterX(150.0f);
+                circle.setCenterY(135.0f);
+                circle.setRadius(100.0f);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+//                sequentialTransition(circle, );
             });
         }
 
@@ -209,7 +220,7 @@ public class Animations {
      * fromValue − Specifies the start color value for this StrokeTransition.
      * toValue − Specifies the stop color value for this StrokeTransition.
      */
-    private void strokeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation strokeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
@@ -217,7 +228,7 @@ public class Animations {
 
         StrokeTransition strokeTransition = new StrokeTransition();
         strokeTransition.setShape((Shape)node);
-        strokeTransition.setCycleCount(FillTransition.INDEFINITE);
+        strokeTransition.setCycleCount(cycleCount);
 
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
@@ -332,9 +343,11 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        strokeTransition.play();
+//        strokeTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return strokeTransition;
     }
 
     /**
@@ -345,7 +358,7 @@ public class Animations {
      * fromValue − Specifies the start color value for this FillTransition.
      * toValue − Specifies the stop color value for this FillTransition.
      */
-    private void fillTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation fillTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
@@ -353,7 +366,7 @@ public class Animations {
 
         FillTransition fillTransition = new FillTransition();
         fillTransition.setShape((Shape)node);
-        fillTransition.setCycleCount(FillTransition.INDEFINITE);
+        fillTransition.setCycleCount(cycleCount);
 
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
@@ -468,9 +481,11 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        fillTransition.play();
+//        fillTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return fillTransition;
     }
 
     /**
@@ -491,7 +506,7 @@ public class Animations {
 
      * This animation seems to not work on Shape3D objects
      */
-    private void fadeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation fadeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
@@ -499,7 +514,7 @@ public class Animations {
 
         FadeTransition fadeTransition = new FadeTransition();
         fadeTransition.setNode(node);
-        fadeTransition.setCycleCount(ScaleTransition.INDEFINITE);
+        fadeTransition.setCycleCount(cycleCount);
 
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
@@ -614,9 +629,11 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        fadeTransition.play();
+//        fadeTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return fadeTransition;
     }
 
     /**
@@ -637,7 +654,7 @@ public class Animations {
      * position by default and is what we do in our example, only setting "by" alone, if you want to try the other settings
      * uncomment binding code in this function
      */
-    private void translateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation translateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
@@ -645,7 +662,7 @@ public class Animations {
 
         TranslateTransition translateTransition = new TranslateTransition();
         translateTransition.setNode(node);
-        translateTransition.setCycleCount(ScaleTransition.INDEFINITE);
+        translateTransition.setCycleCount(cycleCount);
 
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
@@ -837,9 +854,11 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        translateTransition.play();
+//        translateTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return translateTransition;
     }
 
     /**
@@ -860,7 +879,7 @@ public class Animations {
      * we will use the "by" variables only if you want to try setting up other variables please uncomment the proper code
      * in this function
      */
-    private void scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation scaleTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
         node.setLayoutY(nodeTranslationY);
 
@@ -868,7 +887,7 @@ public class Animations {
 
         ScaleTransition scaleTransition = new ScaleTransition();
         scaleTransition.setNode(node);
-        scaleTransition.setCycleCount(ScaleTransition.INDEFINITE);
+        scaleTransition.setCycleCount(cycleCount);
 
         //================================== DURATION PROPERTY
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
@@ -1060,9 +1079,11 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        scaleTransition.play();
+//        scaleTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return scaleTransition;
     }
 
     /**
@@ -1079,7 +1100,7 @@ public class Animations {
 
      * Play with the controls, if animation is not playing or updating, stop it and play it again
      */
-    private void rotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+    private Animation rotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
 //        Translate translate = new Translate(nodeTranslationX, nodeTranslationY);
 //        node.getTransforms().add(translate);
         node.setLayoutX(nodeTranslationX);
@@ -1087,7 +1108,7 @@ public class Animations {
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setNode(node);
-        rotateTransition.setCycleCount(RotateTransition.INDEFINITE);
+        rotateTransition.setCycleCount(cycleCount);
 
         ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
 
@@ -1223,8 +1244,10 @@ public class Animations {
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
 
-        rotateTransition.play();
+//        rotateTransition.play();
 
         nodes.addAll(node, vBox);
+
+        return rotateTransition;
     }
 }
