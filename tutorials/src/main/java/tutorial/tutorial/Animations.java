@@ -117,7 +117,9 @@ public class Animations {
                 //Setting the fill color for the hexagon
                 hexagon.setFill(Color.BLUE);
 
-                rotateTransition(hexagon, 700, 110, 10, 50);
+                rotateTransition(hexagon, 450, 110, 10, 50);
+
+                rotateTransition(new Cylinder(50, 75, 10), 1200, 250, 750, 50);
             });
         }
 
@@ -138,9 +140,11 @@ public class Animations {
 
      * Play with the controls, if animation is not playing or updating, stop it and play it again
      */
-    private void rotateTransition(Node node, double translationX, double translationY, double boardX, double boardY) {
-        Translate translate = new Translate(translationX, translationY);
-        node.getTransforms().add(translate);
+    private void rotateTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+//        Translate translate = new Translate(nodeTranslationX, nodeTranslationY);
+//        node.getTransforms().add(translate);
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
 
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setNode(node);
