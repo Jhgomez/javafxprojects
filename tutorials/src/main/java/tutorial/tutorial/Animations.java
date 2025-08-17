@@ -115,7 +115,10 @@ public class Animations {
 
                 rotateTransition(hexagon, 325, 110, 10, 50, RotateTransition.INDEFINITE).play();
 
-                rotateTransition(new Cylinder(50, 75, 150), 950, 250, 625, 50, RotateTransition.INDEFINITE).play();
+                Cylinder cylinder = new Cylinder(50, 75, 150);
+                rotateTransition(cylinder, 950, 250, 625, 50, RotateTransition.INDEFINITE).play();
+
+                nodes.addAll(hexagon, cylinder);
             });
 
             animations.put("Scale Transition", () -> {
@@ -126,7 +129,10 @@ public class Animations {
 
                 scaleTransition(circle, 300, 250, 10, 50, ScaleTransition.INDEFINITE).play();
 
-                scaleTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50, ScaleTransition.INDEFINITE).play();
+                Cylinder cylinder = new Cylinder(50, 75, 10);
+                scaleTransition(cylinder, 800, 250, 500, 50, ScaleTransition.INDEFINITE).play();
+
+                nodes.addAll(circle, cylinder);
             });
 
             animations.put("Translate Transition", () -> {
@@ -137,7 +143,10 @@ public class Animations {
 
                 translateTransition(circle, 300, 250, 10, 50, TranslateTransition.INDEFINITE).play();
 
-                translateTransition(new Cylinder(50, 75, 10), 800, 250, 500, 50, TranslateTransition.INDEFINITE).play();
+                Cylinder cylinder = new Cylinder(50, 75, 10);
+                translateTransition(cylinder, 800, 250, 500, 50, TranslateTransition.INDEFINITE).play();
+
+                nodes.addAll(circle, cylinder);
             });
 
             animations.put("Fade Transition", () -> {
@@ -148,6 +157,8 @@ public class Animations {
 
                 // this animation seems to not work on Shape3D objects
                 fadeTransition(circle, 300, 250, 10, 50, FadeTransition.INDEFINITE).play();
+
+                nodes.add(circle);
             });
 
             animations.put("Fill Transition", () -> {
@@ -158,6 +169,8 @@ public class Animations {
 
                 // this animation seems to not work on Shape3D objects
                 fillTransition(circle, 300, 250, 10, 50, FillTransition.INDEFINITE).play();
+
+                nodes.add(circle);
             });
 
             animations.put("Stroke Transition", () -> {
@@ -169,6 +182,8 @@ public class Animations {
 
                 // this animation seems to not work on Shape3D objects
                 strokeTransition(circle, 300, 250, 10, 50, StrokeTransition.INDEFINITE).play();
+
+                nodes.add(circle);
             });
 
             animations.put("Sequential Transition", () -> {
@@ -176,10 +191,27 @@ public class Animations {
                 circle.setCenterX(150.0f);
                 circle.setCenterY(135.0f);
                 circle.setRadius(100.0f);
+                circle.setStrokeWidth(8);
+                circle.setStrokeType(StrokeType.OUTSIDE);
+                circle.setStroke(Color.BLACK);
                 circle.setFill(Color.BROWN);
-                circle.setStrokeWidth(20);
 
-//                sequentialTransition(circle, );
+                sequentialTransition(
+                        circle,
+                        1100,
+                        425,
+                        10,
+                        50,
+                        SequentialTransition.INDEFINITE,
+                        "rotate",
+                        "fill",
+                        "translate",
+                        "scale",
+                        "fade",
+                        "stroke"
+                );
+
+                nodes.add(circle);
             });
         }
 
@@ -206,6 +238,134 @@ public class Animations {
         }
 
         return interpolators;
+    }
+
+    /**
+     * You can apply one transition on a JavaFX node, or multiple transitions together. However, there are two different ways when you want to apply multiple transitions on a single node.
+
+     * Sequential transition is applied on a JavaFX node when you want to apply multiple transitions on a JavaFX node one after the other.
+     */
+    private Animation sequentialTransition(
+            Node node,
+            double nodeTranslationX,
+            double nodeTranslationY,
+            double boardX,
+            double boardY,
+            int cycleCount,
+            String... animations
+    ) {
+        SequentialTransition sequentialTransition = new SequentialTransition();
+        sequentialTransition.setCycleCount(cycleCount);
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    sequentialTransition.stop();
+                }
+                case 1 -> {
+                    sequentialTransition.pause();
+                }
+                case 2 -> {
+                    sequentialTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                sequentialTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Sequential Transition, Be aware some transitions doesn't work with Shape3D");
+        title.setWrappingWidth(180);
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        sequentialTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
+
+        if (cycleCount == 0 || cycleCount == SequentialTransition.INDEFINITE) {
+            cycleCount = 2;
+        }
+
+        for (String animation : animations) {
+            switch(animation) {
+                case "rotate" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            rotateTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "translate" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            translateTransition(node, 0, 0, boardX, boardY, cycleCount)                    );
+                }
+                case "scale" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            scaleTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "fade" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            fadeTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "fill" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            fillTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "stroke" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            strokeTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+            }
+        }
+
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+        return sequentialTransition;
     }
 
     /**
@@ -246,10 +406,10 @@ public class Animations {
 
 
         //======================================= FROM VALUES
-        Slider from_paint_slider = new Slider(0, 2, 0);
-        ObjectProperty<Color> paintFrom = new SimpleObjectProperty<>(Color.RED);
-        Label from_paint_Label = new Label("From property, 0/RED, \n1/BLUE, 2/PINK");
-        Label from_paint_Value = new Label("Value: 0");
+        Slider from_paint_slider = new Slider(0, 2, 1);
+        ObjectProperty<Color> paintFrom = new SimpleObjectProperty<>(Color.TURQUOISE);
+        Label from_paint_Label = new Label("From property, 0/BROWN, \n1/TURQUOISE, 2/PINK");
+        Label from_paint_Value = new Label("Value: 1");
         from_paint_slider.setBlockIncrement(1);
 
         strokeTransition.fromValueProperty().bind(paintFrom);
@@ -257,17 +417,17 @@ public class Animations {
             from_paint_Value.setText(String.format("Value: %d", newValue.intValue()));
 
             switch (newValue.intValue()) {
-                case 0 -> paintFrom.setValue(Color.RED);
-                case 1 -> paintFrom.setValue(Color.BLUE);
+                case 0 -> paintFrom.setValue(Color.BROWN);
+                case 1 -> paintFrom.setValue(Color.TURQUOISE);
                 case 2 -> paintFrom.setValue(Color.PINK);
             }
         });
 
         //======================================= TO VALUES
-        Slider to_paint_slider = new Slider(0, 2, 1);
-        ObjectProperty<Color> paintTo = new SimpleObjectProperty<>(Color.BLUEVIOLET);
-        Label to_paint_Label = new Label("To property, 0/GRAY,\n1/BLUEVIOLET, 2/PURPLE");
-        Label to_paint_Value = new Label("Value: 1");
+        Slider to_paint_slider = new Slider(0, 2, 2);
+        ObjectProperty<Color> paintTo = new SimpleObjectProperty<>(Color.YELLOW);
+        Label to_paint_Label = new Label("To property, 0/GRAY,\n1/GREEN, 2/YELLOW");
+        Label to_paint_Value = new Label("Value: 2");
         to_paint_slider.setBlockIncrement(1);
 
         strokeTransition.toValueProperty().bind(paintTo);
@@ -276,8 +436,8 @@ public class Animations {
 
             switch (newValue.intValue()) {
                 case 0 -> paintTo.setValue(Color.GRAY);
-                case 1 -> paintTo.setValue(Color.BLUEVIOLET);
-                case 2 -> paintTo.setValue(Color.PURPLE);
+                case 1 -> paintTo.setValue(Color.DARKGREEN);
+                case 2 -> paintTo.setValue(Color.YELLOW);
             }
         });
 
@@ -317,7 +477,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("FIll Transition, doesn't work with Shape3D");
+        Text title = new Text("Stroke Transition, doesn't work with Shape3D");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
@@ -345,7 +505,7 @@ public class Animations {
 
 //        strokeTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return strokeTransition;
     }
@@ -455,7 +615,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("FIll Transition, doesn't work with Shape3D");
+        Text title = new Text("Fill Transition, doesn't work with Shape3D");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
@@ -483,7 +643,7 @@ public class Animations {
 
 //        fillTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return fillTransition;
     }
@@ -600,7 +760,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("Translate Transition, Check code notes about how controls are working");
+        Text title = new Text("Fade Transition, Check code notes about how controls are working");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
@@ -631,7 +791,7 @@ public class Animations {
 
 //        fadeTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return fadeTransition;
     }
@@ -856,7 +1016,7 @@ public class Animations {
 
 //        translateTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return translateTransition;
     }
@@ -1032,7 +1192,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("Fade Transition, Check code notes about how controls are working");
+        Text title = new Text("Scale Transition, Check code notes about how controls are working");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
@@ -1081,7 +1241,7 @@ public class Animations {
 
 //        scaleTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return scaleTransition;
     }
@@ -1246,7 +1406,7 @@ public class Animations {
 
 //        rotateTransition.play();
 
-        nodes.addAll(node, vBox);
+        nodes.add(vBox);
 
         return rotateTransition;
     }
