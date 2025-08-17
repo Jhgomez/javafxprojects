@@ -186,6 +186,20 @@ public class Animations {
                 nodes.add(circle);
             });
 
+            animations.put("Path Transition", () -> {
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                pathTransition(circle, null, 170, 250, 10, 50, TranslateTransition.INDEFINITE).play();
+
+                Cylinder cylinder = new Cylinder(50, 75, 10);
+                pathTransition(cylinder, null, 620, 250, 400, 50, TranslateTransition.INDEFINITE).play();
+
+                nodes.addAll(circle, cylinder);
+            });
+
             animations.put("Sequential Transition", () -> {
                 Circle circle = new Circle();
                 circle.setCenterX(150.0f);
@@ -209,7 +223,7 @@ public class Animations {
                         "scale",
                         "fade",
                         "stroke"
-                );
+                ).play();
 
                 nodes.add(circle);
             });
@@ -241,9 +255,11 @@ public class Animations {
     }
 
     /**
-     * You can apply one transition on a JavaFX node, or multiple transitions together. However, there are two different ways when you want to apply multiple transitions on a single node.
+     * You can apply one transition on a JavaFX node, or multiple transitions together. However, there are two different
+     * ways when you want to apply multiple transitions on a single node.
 
-     * Sequential transition is applied on a JavaFX node when you want to apply multiple transitions on a JavaFX node one after the other.
+     * Sequential transition is applied on a JavaFX node when you want to apply multiple transitions on a JavaFX node one
+     * after the other.
      */
     private Animation sequentialTransition(
             Node node,
@@ -346,6 +362,10 @@ public class Animations {
                     );
                 }
                 case "fill" -> {
+                    if (node instanceof Shape3D) {
+                        continue;
+                    }
+
                     boardX += 200;
 
                     sequentialTransition.getChildren().add(
@@ -353,6 +373,10 @@ public class Animations {
                     );
                 }
                 case "stroke" -> {
+                    if (node instanceof Shape3D) {
+                        continue;
+                    }
+
                     boardX += 200;
 
                     sequentialTransition.getChildren().add(
@@ -366,6 +390,142 @@ public class Animations {
         node.setLayoutY(nodeTranslationY);
 
         return sequentialTransition;
+    }
+
+    /**
+     * A path transition in JavaFX is used to move a JavaFX node (or object) around a specific path. This is similar to
+     * translate transition, as it also moves the object from one position to another. However, the translate transition
+     * does not provide a continuous path through which the object moves; which path transition does.
+
+     * Any JavaFX node, like a 2D or 3D shape, text, image etc., can be moved along any path: straight or curved.
+
+     * This translation along a path is done by updating the coordinates of the node in both X and Y directions, and by
+     * updating the orientation to OrientationType.ORTHOGONAL_TO_TANGENT, at regular interval.
+
+     * duration − The duration of this Transition.
+     * node − The target node of this PathTransition.
+     * orientation − Specifies the upright orientation of node along the path.
+     * path − The shape on which outline the node should be animated.
+     */
+    private Animation pathTransition(Node node, Path path, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+        if (path == null) {
+            path = new Path();
+
+            MoveTo moveTo = new MoveTo(100, 150);
+
+            CubicCurveTo cubicCurveTo = new CubicCurveTo(400, 40, 175, 250, 500, 150);
+
+            path.getElements().add(moveTo);
+            path.getElements().add(cubicCurveTo);
+        }
+
+//        rotateTransition(node, nodeTranslationX + 115, nodeTranslationY, boardX + 195, boardY);
+
+        PathTransition pathTransition = new PathTransition();
+        pathTransition.setNode(node);
+        pathTransition.setPath(path);
+        pathTransition.setCycleCount(cycleCount);
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        pathTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+
+        //======================================= ORIENTATION
+        Slider from_paint_slider = new Slider(0, 1, 1);
+        ObjectProperty<PathTransition.OrientationType> orientation =
+                new SimpleObjectProperty<>(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
+        Label orientation_Label = new Label("OrientationType property, 0/NONE, \n1/ORTHOGONAL_TO_TANGENT");
+        Label orientation_Value = new Label("Value: 1");
+        from_paint_slider.setBlockIncrement(1);
+
+        pathTransition.orientationProperty().bind(orientation);
+        from_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            orientation_Value.setText(String.format("Value: %d", newValue.intValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> orientation.setValue(PathTransition.OrientationType.NONE);
+                case 1 -> orientation.setValue(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
+            }
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        pathTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    pathTransition.stop();
+                }
+                case 1 -> {
+                    pathTransition.pause();
+                }
+                case 2 -> {
+                    pathTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                pathTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Stroke Transition, doesn't work with Shape3D");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                orientation_Label,
+                from_paint_slider,
+                orientation_Value,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+//        strokeTransition.play();
+
+        nodes.add(vBox);
+
+        return pathTransition;
     }
 
     /**
@@ -664,7 +824,7 @@ public class Animations {
      * position by default and is what we do in our example, only setting "by" alone, if you want to try the other settings
      * uncomment binding code in this function
 
-     * This animation seems to not work on Shape3D objects
+     * This animation can be applied to Shape3D objects but seems to make no effect on them
      */
     private Animation fadeTransition(Node node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY, int cycleCount) {
         node.setLayoutX(nodeTranslationX);
