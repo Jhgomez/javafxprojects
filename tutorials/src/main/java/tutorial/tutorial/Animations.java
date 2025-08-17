@@ -194,10 +194,71 @@ public class Animations {
 
                 pathTransition(circle, null, 170, 250, 10, 50, TranslateTransition.INDEFINITE).play();
 
+                Path path = new Path();
+                MoveTo moveTo = new MoveTo(108, 71);
+                LineTo line1 = new LineTo(321, 161);
+                LineTo line2 = new LineTo(126,232);
+                LineTo line3 = new LineTo(232,52);
+                LineTo line4 = new LineTo(269, 250);
+                LineTo line5 = new LineTo(108, 71);
+                path.getElements().add(moveTo);
+                path.getElements().addAll(line1, line2, line3, line4, line5);
+
                 Cylinder cylinder = new Cylinder(50, 75, 10);
-                pathTransition(cylinder, null, 620, 250, 400, 50, TranslateTransition.INDEFINITE).play();
+                pathTransition(cylinder, path, 620, 250, 400, 50, TranslateTransition.INDEFINITE).play();
 
                 nodes.addAll(circle, cylinder);
+            });
+
+            animations.put("Pause Transition", () -> {
+                // There is at least two different ways you could use this transition, one is inside a group of transition
+                // with "Sequential Transition" and the other is playing the pause transition and setting an "onFinished"
+                // listener to play(continue), or whatever, another transition
+                Circle circle = new Circle();
+                circle.setRadius(50.0);
+                circle.setFill(Color.BROWN);
+                circle.setStrokeWidth(20);
+
+                // In this use case, pause transition can be similar to a thread sleep but it is not realy sleeping a thread,
+                // it would be acting more like a timer
+                Animation translation =
+                        translateTransition(circle, 250, 350, 10, 50, TranslateTransition.INDEFINITE);
+
+                translation.play();
+
+                Text info = new Text("To see this pause animation, change it's state to pause/stop back to play");
+                info.setWrappingWidth(200);
+                info.setLayoutY(260);
+                info.setLayoutX(210);
+
+                Animation pause = pauseTransition(210, 50, 2);
+                pause.statusProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue == Animation.Status.RUNNING) {
+                        translation.pause();
+                    }
+                });
+
+                pause.setOnFinished(e -> {
+                    translation.play();
+                });
+
+                // In this use case it lives as part of a group of animations/transitions
+                Cylinder cylinder = new Cylinder(50, 75, 10);
+                sequentialTransition(
+                        cylinder,
+                        1825,
+                        425,
+                        470,
+                        50,
+                        TranslateTransition.INDEFINITE,
+                        "rotate",
+                        "pause",
+                        "translate",
+                        "pause",
+                        "scale"
+                ).play();
+
+                nodes.addAll(info, circle, cylinder);
             });
 
             animations.put("Sequential Transition", () -> {
@@ -219,6 +280,7 @@ public class Animations {
                         SequentialTransition.INDEFINITE,
                         "rotate",
                         "fill",
+                        "pause",
                         "translate",
                         "scale",
                         "fade",
@@ -383,6 +445,13 @@ public class Animations {
                             strokeTransition(node, 0, 0, boardX, boardY, cycleCount)
                     );
                 }
+                case "pause" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            pauseTransition(boardX, boardY, cycleCount)
+                    );
+                }
             }
         }
 
@@ -390,6 +459,86 @@ public class Animations {
         node.setLayoutY(nodeTranslationY);
 
         return sequentialTransition;
+    }
+
+    private Animation pauseTransition(double boardX, double boardY, int cycleCount) {
+        PauseTransition pauseTransition = new PauseTransition();
+        pauseTransition.setCycleCount(cycleCount);
+
+
+        //================================== DURATION PROPERTY
+        ObjectProperty<Duration> duration = new SimpleObjectProperty<>(Duration.millis(1000));
+
+        Slider durationSlider = new Slider(0, 100, 0.167);
+        Label durationLabel = new Label("Duration");
+        Label durationValue = new Label("Value: 1s");
+        durationSlider.setBlockIncrement(0.1);
+
+        pauseTransition.durationProperty().bind(duration);
+        durationSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            duration.setValue(Duration.millis(newValue.doubleValue() * 6000));
+            durationValue.setText(String.format("Duration: %.2f s", newValue.doubleValue() * 6));
+        });
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        pauseTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        Slider playSlider = new Slider(0, 2, 2);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 2");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    pauseTransition.stop();
+                }
+                case 1 -> {
+                    pauseTransition.pause();
+                }
+                case 2 -> {
+                    pauseTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                pauseTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Pause Transition Controls");
+        title.setWrappingWidth(180);
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                durationLabel,
+                durationSlider,
+                durationValue,
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
+
+        return pauseTransition;
     }
 
     /**
@@ -445,15 +594,15 @@ public class Animations {
 
 
         //======================================= ORIENTATION
-        Slider from_paint_slider = new Slider(0, 1, 1);
+        Slider orientation_slider = new Slider(0, 1, 1);
         ObjectProperty<PathTransition.OrientationType> orientation =
                 new SimpleObjectProperty<>(PathTransition.OrientationType.ORTHOGONAL_TO_TANGENT);
         Label orientation_Label = new Label("OrientationType property, 0/NONE, \n1/ORTHOGONAL_TO_TANGENT");
         Label orientation_Value = new Label("Value: 1");
-        from_paint_slider.setBlockIncrement(1);
+        orientation_slider.setBlockIncrement(1);
 
         pathTransition.orientationProperty().bind(orientation);
-        from_paint_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+        orientation_slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             orientation_Value.setText(String.format("Value: %d", newValue.intValue()));
 
             switch (newValue.intValue()) {
@@ -498,7 +647,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("Stroke Transition, doesn't work with Shape3D");
+        Text title = new Text("Path Transition Controls");
         title.setWrappingWidth(180);
 
         VBox vBox = new VBox(
@@ -508,7 +657,7 @@ public class Animations {
                 durationSlider,
                 durationValue,
                 orientation_Label,
-                from_paint_slider,
+                orientation_slider,
                 orientation_Value,
                 playLabel,
                 playSlider,
@@ -520,8 +669,6 @@ public class Animations {
 
         vBox.setLayoutX(boardX);
         vBox.setLayoutY(boardY);
-
-//        strokeTransition.play();
 
         nodes.add(vBox);
 
