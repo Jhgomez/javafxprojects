@@ -22,6 +22,7 @@ public class TutorialApp extends Application {
         Button effects = new Button("Effects");
         Button transformations = new Button("Transformations");
         Button animations = new Button("Animations");
+        Button images = new Button("Images");
 
         Runnable runnable = stage::show;
 
@@ -65,6 +66,11 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        images.setOnAction(e -> {
+            new Images().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox root = new VBox(
                 16.0,
                 _2DShapes,
@@ -74,7 +80,8 @@ public class TutorialApp extends Application {
                 colorsAndTextures,
                 effects,
                 transformations,
-                animations
+                animations,
+                images
         );
 
         root.setAlignment(Pos.CENTER);
