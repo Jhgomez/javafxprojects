@@ -256,7 +256,7 @@ public class Animations {
                         "translate",
                         "pause",
                         "scale"
-                ).play();
+                );
 
                 nodes.addAll(info, circle, cylinder);
             });
@@ -285,9 +285,40 @@ public class Animations {
                         "scale",
                         "fade",
                         "stroke"
-                ).play();
+                );
 
                 nodes.add(circle);
+            });
+
+            animations.put("Parallel Transition", () -> {
+                Circle circle = new Circle();
+                circle.setCenterX(150.0f);
+                circle.setCenterY(135.0f);
+                circle.setRadius(100.0f);
+                circle.setStrokeWidth(8);
+                circle.setStrokeType(StrokeType.OUTSIDE);
+                circle.setStroke(Color.BLACK);
+                circle.setFill(Color.BROWN);
+
+                Cylinder cylinder = new Cylinder(50, 75, 10);
+
+                parallelTransition(
+                        cylinder,
+                        1100,
+                        425,
+                        10,
+                        50,
+                        SequentialTransition.INDEFINITE,
+                        "rotate",
+                        "pause",
+                        "translate",
+                        "scale",
+                        "fade",
+                        "stroke",
+                        "path"
+                );
+
+                nodes.add(cylinder);
             });
         }
 
@@ -317,6 +348,154 @@ public class Animations {
     }
 
     /**
+     * Be aware pause transition may make no much sense in this context
+     */
+    private Animation parallelTransition(
+            Node node,
+            double nodeTranslationX,
+            double nodeTranslationY,
+            double boardX,
+            double boardY,
+            int cycleCount,
+            String... animations
+    ) {
+        ParallelTransition parallelTransition = new ParallelTransition();
+        parallelTransition.setCycleCount(cycleCount);
+
+        Slider playSlider = new Slider(0, 2, 0);
+        playSlider.setBlockIncrement(1);
+        Label playLabel = new Label("0/stop, 1/pause, 2/play");
+        Label playValue = new Label("Value: 0");
+
+        playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
+
+            switch (newValue.intValue()) {
+                case 0 -> {
+                    parallelTransition.stop();
+                }
+                case 1 -> {
+                    parallelTransition.pause();
+                }
+                case 2 -> {
+                    parallelTransition.play();
+                }
+            }
+        });
+
+        ComboBox<String> interpolatorComboBox = new ComboBox<>(FXCollections.observableArrayList(getInterpolators().keySet()));
+        interpolatorComboBox.setPromptText("Choose Interpolator");
+
+        interpolatorComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(oldValue)) {
+                parallelTransition.setInterpolator(interpolators.get(newValue));
+            }
+        });
+
+        Text title = new Text("Parallel Transition, Be aware some transitions doesn't work with Shape3D, Set up animations as you'd like then change to Play state to start");
+        title.setWrappingWidth(180);
+
+        //======================================== AUTOREVERSE
+        CheckBox autoReverseCheckBox = new CheckBox("Auto Reverse");
+        autoReverseCheckBox.setSelected(true);
+
+        parallelTransition.autoReverseProperty().bind(autoReverseCheckBox.selectedProperty());
+
+        VBox vBox = new VBox(
+                title,
+                new Separator(Orientation.VERTICAL),
+                playLabel,
+                playSlider,
+                playValue,
+                autoReverseCheckBox,
+                new Separator(Orientation.VERTICAL),
+                interpolatorComboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
+
+        if (cycleCount == 0 || cycleCount == SequentialTransition.INDEFINITE) {
+            cycleCount = 2;
+        }
+
+        for (String animation : animations) {
+            switch(animation) {
+                case "path" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            pathTransition(node, null, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "rotate" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            rotateTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "translate" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            translateTransition(node, 0, 0, boardX, boardY, cycleCount)                    );
+                }
+                case "scale" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            scaleTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "fade" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            fadeTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "fill" -> {
+                    if (node instanceof Shape3D) {
+                        continue;
+                    }
+
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            fillTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "stroke" -> {
+                    if (node instanceof Shape3D) {
+                        continue;
+                    }
+
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            strokeTransition(node, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
+                case "pause" -> {
+                    boardX += 200;
+
+                    parallelTransition.getChildren().add(
+                            pauseTransition(boardX, boardY, cycleCount)
+                    );
+                }
+            }
+        }
+
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+        return parallelTransition;
+    }
+
+    /**
      * You can apply one transition on a JavaFX node, or multiple transitions together. However, there are two different
      * ways when you want to apply multiple transitions on a single node.
 
@@ -335,10 +514,10 @@ public class Animations {
         SequentialTransition sequentialTransition = new SequentialTransition();
         sequentialTransition.setCycleCount(cycleCount);
 
-        Slider playSlider = new Slider(0, 2, 2);
+        Slider playSlider = new Slider(0, 2, 0);
         playSlider.setBlockIncrement(1);
         Label playLabel = new Label("0/stop, 1/pause, 2/play");
-        Label playValue = new Label("Value: 2");
+        Label playValue = new Label("Value: 0");
 
         playSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
             playValue.setText(String.format("Value: %.2f", newValue.doubleValue()));
@@ -365,7 +544,7 @@ public class Animations {
             }
         });
 
-        Text title = new Text("Sequential Transition, Be aware some transitions doesn't work with Shape3D");
+        Text title = new Text("Sequential Transition, Be aware some transitions doesn't work with Shape3D, Set up animations as you'd like then change to Play state to start");
         title.setWrappingWidth(180);
 
         //======================================== AUTOREVERSE
@@ -396,6 +575,13 @@ public class Animations {
 
         for (String animation : animations) {
             switch(animation) {
+                case "path" -> {
+                    boardX += 200;
+
+                    sequentialTransition.getChildren().add(
+                            pathTransition(node, null, 0, 0, boardX, boardY, cycleCount)
+                    );
+                }
                 case "rotate" -> {
                     boardX += 200;
 
