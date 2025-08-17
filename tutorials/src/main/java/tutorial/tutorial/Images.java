@@ -17,6 +17,10 @@ import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -125,7 +129,11 @@ public class Images {
         vbox.setLayoutY(comboBoxLayoutY + 70);
         DragUtil.setDraggable(vbox);
 
-        String url = Objects.requireNonNull(Images.class.getResource("tree.png")).toExternalForm();
+        // My user has a white space that is traduce to "%20" when I use the "getResource" function, also it adds a
+        // ":file/" function that is why I need to replace "%20" with a white space(" ") and remove the ":file/" at the beggining
+        // So I thake this "file:\C:\Users\Juan%20Enrique\javafxprojects\tutorials\build\resources\main\tutorial\tutorial\tree.png"
+        // to this "C:\Users\Juan Enrique\javafxprojects\tutorials\build\resources\main\tutorial\tutorial\tree.png"
+        String file = Objects.requireNonNull(Images.class.getResource("tree.png")).toExternalForm().substring(6).replace("%20", " ");
 
         Text title = new Text("If a value is missing, default constructor will be used(InputStream value only) and passed to an ImageView. Note there is no BackgroundLoading option when using an inputstream");
         title.setWrappingWidth(250);
@@ -137,80 +145,33 @@ public class Images {
             nodes.addAll(transformationsComboBox, comboBox, vbox);
 
             vbox.getChildren().clear();
-            content.setBackground(null);
+//            content.setBackground(null);
 
-            switch (newValue) {
-                case "Background Loading" -> {
-                    TextField backgroundLoading = new TextField();
-                    backgroundLoading.setPromptText("backgroundLoading(boolean)");
-
-                    button.setOnAction(event -> {
-                        String backgroundText = backgroundLoading.getText();
-
-                        ImageView imageView;
-                        if (!backgroundText.isEmpty()) {
-                            if (Boolean.parseBoolean(backgroundText)) {
-                                Image image = new Image(url, true);
-                                BackgroundImage backgroundImage = new BackgroundImage(image, null, null, null, null);
-                                Background background = new Background(backgroundImage);
-                                content.setBackground(background);
-                            } else {
-                                imageView = new ImageView(new Image(url, false));
-                                imageView.setX(imageX);
-                                imageView.setY(imageY);
-                                DragUtil.setDraggable(imageView);
-
-                                nodes.add(imageView);
-                            }
-
-                        } else {
-                            content.setBackground(null);
-                            imageView = new ImageView(new Image(url));
-                            imageView.setX(imageX);
-                            imageView.setY(imageY);
-                            DragUtil.setDraggable(imageView);
-
-                            nodes.add(imageView);
-                        }
-                    });
-
-                    vbox.getChildren().addAll(title, backgroundLoading, button);
-                }
-                default -> {
-                    content.setBackground(null);
-                    // This is "Requested Width/Height, Preserve Ratio, Smooth, BackgroundLoading" case
+            // This is "Requested Width/Height, Preserve Ratio, Smooth, BackgroundLoading" case
                     TextField requestedWidth = new TextField();
                     TextField requestedHeight = new TextField();
                     TextField preserveRatio = new TextField();
                     TextField smooth = new TextField();
-                    TextField backgroundLoading = new TextField();
 
                     requestedWidth.setPromptText("requestedWith(required)");
                     requestedHeight.setPromptText("requestedHeight(required)");
                     preserveRatio.setPromptText("preserveRatio(boolean, required)");
                     smooth.setPromptText("smooth(boolean, required)");
-                    backgroundLoading.setPromptText("backgroundLoading(boolean, optional)");
 
                     button.setOnAction(event -> {
-                        String requestedWidthText = requestedWidth.getText();
-                        String requestedHeightText = requestedHeight.getText();
-                        String preserveRatioText = preserveRatio.getText();
-                        String smoothText = smooth.getText();
-                        String backgroundLoadingText = backgroundLoading.getText();
+                        try(InputStream inputStream = new FileInputStream(file)) {
+                            String requestedWidthText = requestedWidth.getText();
+                            String requestedHeightText = requestedHeight.getText();
+                            String preserveRatioText = preserveRatio.getText();
+                            String smoothText = smooth.getText();
 
-                        ImageView imageView;
-                        if (requestedHeightText.isEmpty() || requestedWidthText.isEmpty() || preserveRatioText.isEmpty() || smoothText.isEmpty()) {
-                            imageView = new ImageView(new Image(url));
+                            ImageView imageView;
+                            if (requestedHeightText.isEmpty() || requestedWidthText.isEmpty() || preserveRatioText.isEmpty() || smoothText.isEmpty()) {
+                                imageView = new ImageView(new Image(inputStream));
 
-                            imageView.setX(imageX);
-                            imageView.setY(imageY);
-                            DragUtil.setDraggable(imageView);
-
-                            nodes.add(imageView);
-                        } else {
-                            if (backgroundLoadingText.isEmpty()) {
+                            } else {
                                 Image image = new Image(
-                                        url,
+                                        inputStream,
                                         Double.parseDouble(requestedWidthText),
                                         Double.parseDouble(requestedHeightText),
                                         Boolean.parseBoolean(preserveRatioText),
@@ -219,50 +180,66 @@ public class Images {
 
                                 imageView = new ImageView(image);
 
-                                imageView.setX(imageX);
-                                imageView.setY(imageY);
-                                DragUtil.setDraggable(imageView);
-
-                                nodes.add(imageView);
-                            } else {
-                                if (Boolean.parseBoolean(backgroundLoadingText)) {
-                                    Image image = new Image(
-                                            url,
-                                            Double.parseDouble(requestedWidthText),
-                                            Double.parseDouble(requestedHeightText),
-                                            Boolean.parseBoolean(preserveRatioText),
-                                            Boolean.parseBoolean(smoothText),
-                                            true
-                                    );
-
-                                    BackgroundImage backgroundImage = new BackgroundImage(image, null, null, null, null);
-                                    Background background = new Background(backgroundImage);
-                                    content.setBackground(background);
-                                } else {
-                                    Image image = new Image(
-                                            url,
-                                            Double.parseDouble(requestedWidthText),
-                                            Double.parseDouble(requestedHeightText),
-                                            Boolean.parseBoolean(preserveRatioText),
-                                            Boolean.parseBoolean(smoothText),
-                                            false
-                                    );
-
-                                    imageView = new ImageView(image);
-
-                                    imageView.setX(imageX);
-                                    imageView.setY(imageY);
-                                    DragUtil.setDraggable(imageView);
-
-                                    nodes.add(imageView);
-                                }
                             }
+
+                            imageView.setX(imageX);
+                            imageView.setY(imageY);
+                            DragUtil.setDraggable(imageView);
+
+                            nodes.add(imageView);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
                         }
                     });
 
-                    vbox.getChildren().addAll(title, requestedWidth, requestedHeight, preserveRatio, smooth, backgroundLoading, button);
-                }
-            }
+                    vbox.getChildren().addAll(title, requestedWidth, requestedHeight, preserveRatio, smooth, button);
+//            try {
+//                inputStream.close();
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            switch (newValue) {
+//                case "Background Loading" -> {
+//                    TextField backgroundLoading = new TextField();
+//                    backgroundLoading.setPromptText("backgroundLoading(boolean)");
+//
+//                    button.setOnAction(event -> {
+//                        String backgroundText = backgroundLoading.getText();
+//
+//                        ImageView imageView;
+//                        if (!backgroundText.isEmpty()) {
+//                            if (Boolean.parseBoolean(backgroundText)) {
+//                                Image image = new Image(inputStream);
+//                                BackgroundImage backgroundImage = new BackgroundImage(image, null, null, null, null);
+//                                Background background = new Background(backgroundImage);
+//                                content.setBackground(background);
+//                            } else {
+//                                imageView = new ImageView(new Image(inputStream, false));
+//                                imageView.setX(imageX);
+//                                imageView.setY(imageY);
+//                                DragUtil.setDraggable(imageView);
+//
+//                                nodes.add(imageView);
+//                            }
+//
+//                        } else {
+//                            content.setBackground(null);
+//                            imageView = new ImageView(new Image(inputStream));
+//                            imageView.setX(imageX);
+//                            imageView.setY(imageY);
+//                            DragUtil.setDraggable(imageView);
+//
+//                            nodes.add(imageView);
+//                        }
+//                    });
+//
+//                    vbox.getChildren().addAll(title, backgroundLoading, button);
+//                }
+//                default -> {
+//                    content.setBackground(null);
+//
+//                }
+//            }
         });
     }
 
