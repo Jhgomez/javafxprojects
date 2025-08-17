@@ -102,16 +102,36 @@ public class Images {
         if (animations == null) {
             animations = new HashMap<>();
 
-            animations.put("Image(URL) with ImageView", () -> {
-                imageWithUrlNImageView(10, 60, 350, 50);
-            });
+            animations.put("Image(URL) with ImageView", () ->
+                imageWithUrlNImageView(10, 60, 350, 50)
+            );
 
-            animations.put("Image(InputStream) with ImageView", () -> {
-                imageWithInputStreamNImageView(10, 60, 350, 50);
-            });
+            animations.put("Image(InputStream) with ImageView", () ->
+                    imageWithInputStreamNImageView(10, 60, 350, 50)
+            );
+
+            animations.put("Imageview with URL(Could not be most efficient)", () ->
+                imageViewAlone(350, 50)
+            );
         }
 
         return animations;
+    }
+
+    /**
+     * Creating an ImageView without an ImageView might not be the best choice if you want to be careful with the resources
+     * that the app is using because it will load the plain image while if creating it from an "Image" object you can
+     * specify the size you want to load which will reduce the resources used to display the image, for example if you create
+     * an ImageView from an URL and then set its size to a small size it will consume as much resources as if you would be
+     * loading/displaying the image in full size
+     */
+    private void imageViewAlone(double imageX, double imageY) {
+        String url = Objects.requireNonNull(Images.class.getResource("tree.png")).toExternalForm();
+        ImageView imageView = new ImageView(url);
+        imageView.setX(imageX);
+        imageView.setY(imageY);
+
+        nodes.add(imageView);
     }
 
     private void imageWithInputStreamNImageView(double comboBoxLayoutX, double comboBoxLayoutY, double imageX, double imageY) {
