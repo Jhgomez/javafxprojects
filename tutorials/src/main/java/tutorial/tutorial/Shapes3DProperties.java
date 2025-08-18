@@ -45,7 +45,7 @@ public class Shapes3DProperties {
 
         nodes = pane.getChildren();
 
-        ObservableList<String> options = FXCollections.observableArrayList(getAnimations().keySet());
+        ObservableList<String> options = FXCollections.observableArrayList();
 
         ComboBox<String> transformationsComboBox = new ComboBox<>(options);
         transformationsComboBox.setPromptText("Choose Transformation");
@@ -70,10 +70,15 @@ public class Shapes3DProperties {
 
 //        nodes.add(transformationsComboBox);
         Cylinder cylinder = new Cylinder(50, 75, 10);
+        Box box = new Box(60, 60, 60);
 
-        cullFace(cylinder, 250, 250, 15, 40);
+        cullFace(cylinder, 0, 0, 15, 40);
+        cullFace(box, 0, 0, 515, 40);
 
-        nodes.add(cylinder);
+        drawMode(cylinder, 375, 250, 15, 120);
+        drawMode(box, 875, 250, 515, 120);
+
+        nodes.addAll(cylinder, box);
 
         for (Node node : nodes) {
             DragUtil.setDraggable(node);
@@ -100,20 +105,42 @@ public class Shapes3DProperties {
         stage.setOnCloseRequest(e -> runnable.run());
     }
 
-    private HashMap<String, Runnable> getAnimations() {
-        if (animations == null) {
-            animations = new HashMap<>();
+    /**
+     * Let you choose the type of drawing mode used to draw the current 3D shape. In JavaFX, you can choose two draw modes
+     * to draw a 3D shape, which are −
 
-            animations.put("Rotate Transition", () -> {
-                // In this use case it lives as part of a group of animations/transitions
-//                Cylinder cylinder = new Cylinder(50, 75, 10);
-//
-//                cullFace(cylinder.);
-            });
-        }
+     * Fill − This mode draws and fills a 2D shape (DrawMode.FILL).
+     * Line − This mode draws a 3D shape using lines (DrawMode.LINE).
 
-        return animations;
+     * By default, the drawing mode of a 3Dimensional shape is fill.
+     */
+    private void drawMode(Shape3D node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setLayoutX(nodeTranslationX);
+        node.setLayoutY(nodeTranslationY);
+
+        ObservableList<DrawMode> list = FXCollections.observableArrayList(DrawMode.FILL, DrawMode.LINE);
+        ComboBox<DrawMode> comboBox = new ComboBox<>(list);
+        comboBox.setValue(DrawMode.FILL);
+        comboBox.setPromptText("Choose DrawMode");
+
+        node.drawModeProperty().bind(comboBox.valueProperty());
+
+        Text title = new Text("Draw Property(Default is \"FILL\")");
+        title.setFont(Font.font(16));
+
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(
+                title,
+                new Separator(Orientation.VERTICAL),
+                comboBox
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
     }
+
 
     /**
      * In general, culling is the removal of improperly oriented parts of a shape (which are not visible in the view area).
