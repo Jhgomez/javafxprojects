@@ -11,10 +11,12 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -23,6 +25,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * 3D objects properties can range from deciding the material of a shape: interior and exterior, rendering the 3D object
@@ -75,8 +78,11 @@ public class Shapes3DProperties {
         cullFace(cylinder, 0, 0, 15, 40);
         cullFace(box, 0, 0, 515, 40);
 
-        drawMode(cylinder, 375, 250, 15, 120);
-        drawMode(box, 875, 250, 515, 120);
+        drawMode(cylinder, 0, 0, 15, 120);
+        drawMode(box, 0, 0, 515, 120);
+
+        material(cylinder, 375, 250, 15, 200);
+        material(box, 875, 250, 515, 200);
 
         nodes.addAll(cylinder, box);
 
@@ -103,6 +109,98 @@ public class Shapes3DProperties {
         stage.show();
 
         stage.setOnCloseRequest(e -> runnable.run());
+    }
+
+    /**
+     * This property is used to choose the surface of the material of a 3D shape.
+     */
+    private void material(Shape3D node, double nodeTranslationX, double nodeTranslationY, double boardX, double boardY) {
+        node.setTranslateX(nodeTranslationX);
+        node.setTranslateY(nodeTranslationY);
+
+        Image one = new Image(Objects.requireNonNull(Shapes3DProperties.class.getResource("1.png")).toExternalForm());
+        Image two = new Image(Objects.requireNonNull(Shapes3DProperties.class.getResource("2.png")).toExternalForm());
+        Image three = new Image(Objects.requireNonNull(Shapes3DProperties.class.getResource("3.png")).toExternalForm());
+        Image four = new Image(Objects.requireNonNull(Shapes3DProperties.class.getResource("tree2.png")).toExternalForm());
+
+        ObservableList<Image> list = FXCollections.observableArrayList(one, two, three, four, null);
+
+        PhongMaterial material = new PhongMaterial();
+        node.setMaterial(material);
+
+        //======================== BumpMap
+        ComboBox<Image> bumpComboBox = new ComboBox<>(list);
+        bumpComboBox.setPromptText("Choose Bump Map(null)");
+
+        material.bumpMapProperty().bind(bumpComboBox.valueProperty());
+
+        //======================== DiffuseMap
+        ComboBox<Image> diffuseComboBox = new ComboBox<>(list);
+        diffuseComboBox.setPromptText("Choose Diffuse Map(null)");
+
+        material.diffuseMapProperty().bind(diffuseComboBox.valueProperty());
+
+        //======================== SelfIllumination
+        ComboBox<Image> selfIlluminationComboBox = new ComboBox<>(list);
+        selfIlluminationComboBox.setPromptText("Choose SelfIllumination Map(null)");
+
+        material.selfIlluminationMapProperty().bind(selfIlluminationComboBox.valueProperty());
+
+        //======================== Specular
+        ComboBox<Image> specularComboBox = new ComboBox<>(list);
+        specularComboBox.setPromptText("Choose Specular Map(null)");
+
+        material.specularMapProperty().bind(specularComboBox.valueProperty());
+
+        //======================= diffuseColor
+        TextField diffuseColor =  new TextField();
+        diffuseColor.setPromptText("Enter Diffuse Color Name");
+
+        //======================= specularColor
+        TextField specularColor =  new TextField();
+        specularColor.setPromptText("Enter Specular Color Name");
+
+        //======================= specularPower
+        TextField specularPower =  new TextField();
+        specularPower.setPromptText("Enter Specular Power(double)");
+
+        Button button = new Button("Apply");
+        button.setOnAction(e -> {
+            if (!diffuseColor.getText().isEmpty()) {
+                material.setDiffuseColor(Color.valueOf(diffuseColor.getText()));
+            }
+
+            if (!specularColor.getText().isEmpty()) {
+                material.setSpecularColor(Color.valueOf(specularColor.getText()));
+            }
+
+            if (!specularPower.getText().isEmpty()) {
+                material.setSpecularPower(Double.parseDouble(specularPower.getText()));
+            }
+
+        });
+
+        Text title = new Text("Material Property Controls(Phong)");
+        title.setFont(Font.font(16));
+
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(
+                title,
+                new Separator(Orientation.VERTICAL),
+                bumpComboBox,
+                diffuseComboBox,
+                selfIlluminationComboBox,
+                specularComboBox,
+                diffuseColor,
+                specularColor,
+                specularPower,
+                button
+        );
+
+        vBox.setLayoutX(boardX);
+        vBox.setLayoutY(boardY);
+
+        nodes.add(vBox);
     }
 
     /**
