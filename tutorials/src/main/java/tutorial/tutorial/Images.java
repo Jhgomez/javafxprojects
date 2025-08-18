@@ -7,12 +7,12 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.image.*;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * animating an object implies creating illusion of its motion by rapid display. Animations are used in an application to
@@ -113,6 +114,10 @@ public class Images {
             animations.put("Imageview with URL(Could not be most efficient)", () ->
                 imageViewAlone(350, 50)
             );
+
+            animations.put("Read and Write Pixels", () -> {
+                readNWriteImagePixels(10, 60, 350, 50);
+            });
         }
 
         return animations;
@@ -134,6 +139,134 @@ public class Images {
         nodes.add(imageView);
     }
 
+    private void readNWriteImagePixels(double comboBoxLayoutX, double comboBoxLayoutY, double imageX, double imageY) {
+        ObservableList<String> options = FXCollections.observableArrayList();
+        options.addAll("Darker", "Brighter", "Desaturate", "Grayscale", "invert", "saturate", "Interpolate", "Derive Color");
+
+        ComboBox<String> comboBox = new ComboBox<>(options);
+        comboBox.setPromptText("Select Rewrite Image Change");
+        comboBox.setLayoutX(comboBoxLayoutX);
+        comboBox.setTranslateY(comboBoxLayoutY);
+        nodes.add(comboBox);
+
+        VBox vbox = new VBox();
+        vbox.setLayoutX(comboBoxLayoutX);
+        vbox.setLayoutY(comboBoxLayoutY + 70);
+        DragUtil.setDraggable(vbox);
+        nodes.add(vbox);
+
+        String url = Objects.requireNonNull(Images.class.getResource("tree.png")).toExternalForm();
+        Image image = new Image(url, 300, 400, true, true);
+        ImageView original = new ImageView(image);
+
+        original.setX(imageX);
+        original.setY(imageY);
+        nodes.add(original);
+
+        int width = (int)image.getWidth();
+        int height = (int)image.getHeight();
+
+        PixelReader pixelReader = image.getPixelReader();
+
+        comboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            vbox.getChildren().clear();
+
+            WritableImage wImage = new WritableImage(width, height);
+
+            PixelWriter writer = wImage.getPixelWriter();
+
+            switch (newValue) {
+                case "Darker" -> writeImage(pixelReader, writer, Color::darker, height, width);
+                case "Brighter" -> writeImage(pixelReader, writer, Color::brighter, height, width);
+                case "Desaturate" -> writeImage(pixelReader, writer, Color::desaturate, height, width);
+                case "Grayscale" -> writeImage(pixelReader, writer, Color::grayscale, height, width);
+                case "Saturate" -> writeImage(pixelReader, writer, Color::invert, height, width);
+                case "Interpolate" -> {
+                    TextField colorField = new TextField();
+                    colorField.setPromptText("Enter Color Name(required)");
+
+                    Slider interpolator = new Slider(0, 1, 0);
+                    Label interpolatorLabel = new Label("Interpolator Fraction");
+                    Label valuesLabel = new Label("Value: 0");
+                    interpolator.setBlockIncrement(0.1);
+
+                    interpolator.valueProperty().addListener(((observable1, oldValue1, newValue1) ->
+                            valuesLabel.setText(String.format("Value: %.2f", newValue1.doubleValue()))
+                    ));
+
+                    Button button = new Button("Load Image");
+
+                    button.setOnAction(event ->
+                        writeImage(
+                                pixelReader,
+                                writer,
+                                color -> color.interpolate(Color.valueOf(colorField.getText()),
+                                        interpolator.getValue()),
+                                height,
+                                width
+                        )
+                    );
+
+                    vbox.getChildren().addAll(colorField, interpolatorLabel, interpolator, valuesLabel, button);
+                }
+                case "Derive Color" -> {
+                    TextField hueShift = new TextField();
+                    TextField saturationFactor = new TextField();
+                    TextField brightnessFactor = new TextField();
+                    TextField opacityFactor = new TextField();
+
+                    hueShift.setPromptText("Double(required)");
+                    saturationFactor.setPromptText("Double(required)");
+                    brightnessFactor.setPromptText("Double(required)");
+                    opacityFactor.setPromptText("Double(required)");
+
+                    Button button = new Button("Load Image");
+
+                    button.setOnAction(event -> {
+                        double hue = Double.parseDouble(hueShift.getText());
+                        double saturation = Double.parseDouble(saturationFactor.getText());
+                        double brightness = Double.parseDouble(brightnessFactor.getText());
+                        double opacity = Double.parseDouble(opacityFactor.getText());
+
+                        writeImage(
+                                pixelReader,
+                                writer,
+                                color -> color.deriveColor(hue, saturation,  brightness, opacity),
+                                height,
+                                width
+                        );
+                    });
+
+                    vbox.getChildren().addAll(hueShift, saturationFactor, brightnessFactor, opacityFactor, button);
+                }
+            }
+
+
+            //Setting the view for the writable image
+            ImageView imageView = new ImageView(wImage);
+
+            imageView.setX(imageX + image.getWidth());
+            imageView.setY(imageY);
+
+            DragUtil.setDraggable(imageView);
+
+            nodes.add(imageView);
+        });
+    }
+
+    private void writeImage(PixelReader pixelReader, PixelWriter writer, Function<Color, Color> colorConverter, int height, int width) {
+        for(int y = 0; y < height; y++) {
+            for(int x = 0; x < width; x++) {
+                Color color = pixelReader.getColor(x, y);
+
+                writer.setColor(x, y, colorConverter.apply(color));
+            }
+        }
+    }
+
+    /**
+     * An Image object can also be resized while they are being loaded, in order to reduce its memory storage amount.
+     */
     private void imageWithInputStreamNImageView(double comboBoxLayoutX, double comboBoxLayoutY, double imageX, double imageY) {
         ObservableList<String> options = FXCollections.observableArrayList();
         options.add("Requested Width/Height, Preserve Ratio, Smooth");
