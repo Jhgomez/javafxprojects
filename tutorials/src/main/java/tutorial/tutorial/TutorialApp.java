@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
@@ -77,6 +78,8 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        VBox.setVgrow(_2DShapes, Priority.ALWAYS);
+        _2DShapes.setMaxHeight(Double.MAX_VALUE);
         VBox root = new VBox(
                 16.0,
                 _2DShapes,
