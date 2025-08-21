@@ -9,6 +9,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
+import tutorial.tutorial.media.PlayVideo;
 
 import java.io.IOException;
 
@@ -25,6 +26,7 @@ public class TutorialApp extends Application {
         Button animations = new Button("Animations");
         Button images = new Button("Images");
         Button _3DProperties = new Button("Properties 3D Shapes");
+        Button video = new Button("Video");
 
         Runnable runnable = stage::show;
 
@@ -78,6 +80,11 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        video.setOnAction(e -> {
+            new PlayVideo().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox.setVgrow(_2DShapes, Priority.ALWAYS);
         _2DShapes.setMaxHeight(Double.MAX_VALUE);
         VBox root = new VBox(
@@ -91,7 +98,8 @@ public class TutorialApp extends Application {
                 transformations,
                 animations,
                 images,
-                _3DProperties
+                _3DProperties,
+                video
         );
 
         root.setAlignment(Pos.CENTER);
