@@ -1,8 +1,6 @@
-package tutorial.tutorial;
+package tutorial.tutorial.examples;
 
 import javafx.animation.AnimationTimer;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.geometry.Point2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,10 +10,9 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 
-public class Extras {
+public class Vector {
     private Arrow bullet = new Arrow();
 
     // https://www.youtube.com/watch?v=ypFIoPaTwJQ
