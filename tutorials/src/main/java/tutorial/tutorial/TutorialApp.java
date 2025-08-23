@@ -27,6 +27,7 @@ public class TutorialApp extends Application {
         Button images = new Button("Images");
         Button _3DProperties = new Button("Properties 3D Shapes");
         Button video = new Button("Video");
+        Button extras = new Button("Extras");
 
         Runnable runnable = stage::show;
 
@@ -85,6 +86,11 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        extras.setOnAction(e -> {
+            new Extras().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox.setVgrow(_2DShapes, Priority.ALWAYS);
         _2DShapes.setMaxHeight(Double.MAX_VALUE);
         VBox root = new VBox(
@@ -99,7 +105,8 @@ public class TutorialApp extends Application {
                 animations,
                 images,
                 _3DProperties,
-                video
+                video,
+                extras
         );
 
         root.setAlignment(Pos.CENTER);
