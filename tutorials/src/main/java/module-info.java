@@ -7,4 +7,10 @@ module tutorial.tutorial {
 
     opens tutorial.tutorial to javafx.fxml;
     exports tutorial.tutorial;
+//    exports tutorial.tutorial.examples.vector;
+    opens tutorial.tutorial.examples.vector to javafx.fxml;
+//    exports tutorial.tutorial.examples.platformgame;
+    opens tutorial.tutorial.examples.platformgame to javafx.fxml;
+//    exports tutorial.tutorial.examples.vector;
+//    opens tutorial.tutorial.examples.platformgame to javafx.fxml;
 }

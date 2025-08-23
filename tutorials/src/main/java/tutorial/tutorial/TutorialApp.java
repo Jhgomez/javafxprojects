@@ -9,6 +9,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
+import tutorial.tutorial.examples.platformgame.PlatformGame;
+import tutorial.tutorial.examples.vector.Vector;
 import tutorial.tutorial.media.PlayVideo;
 
 import java.io.IOException;
@@ -27,7 +29,8 @@ public class TutorialApp extends Application {
         Button images = new Button("Images");
         Button _3DProperties = new Button("Properties 3D Shapes");
         Button video = new Button("Video");
-        Button extras = new Button("Extras");
+        Button vector = new Button("Vector Example");
+        Button platformGame = new Button("Platform Game");
 
         Runnable runnable = stage::show;
 
@@ -86,8 +89,13 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
-        extras.setOnAction(e -> {
-            new Extras().displayScreen(runnable);
+        vector.setOnAction(e -> {
+            new Vector().displayScreen(runnable);
+            stage.hide();
+        });
+
+        platformGame.setOnAction(e -> {
+            new PlatformGame().displayScreen(runnable);
             stage.hide();
         });
 
@@ -106,7 +114,8 @@ public class TutorialApp extends Application {
                 images,
                 _3DProperties,
                 video,
-                extras
+                vector,
+                platformGame
         );
 
         root.setAlignment(Pos.CENTER);

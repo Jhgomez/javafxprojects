@@ -1,4 +1,4 @@
-package tutorial.tutorial.examples;
+package tutorial.tutorial.examples.vector;
 
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Point2D;
