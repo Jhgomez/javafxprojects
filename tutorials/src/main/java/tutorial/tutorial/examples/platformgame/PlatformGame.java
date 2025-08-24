@@ -24,7 +24,7 @@ public class PlatformGame {
 
     private Pane appRoot = new Pane();
     private Pane gameRoot = new Pane();
-    private Pane uiRoot = new Pane();
+//    private Pane uiRoot = new Pane();
 
     private Node player;
     private Point2D playerVelocity = new Point2D(0,0);
@@ -38,6 +38,7 @@ public class PlatformGame {
         levelWidth = LevelData.LEVEL1[0].length() * 60;
 
         Rectangle bg = new Rectangle(1200, 720);
+        bg.widthProperty().bind(gameRoot.widthProperty());
 
         // read level info, 1 is a platform, 0 is the avism
         for (int i = 0; i < LevelData.LEVEL1.length; i++) {
@@ -64,7 +65,8 @@ public class PlatformGame {
             }
         });
 
-        appRoot.getChildren().addAll(bg, gameRoot, uiRoot);
+//        appRoot.getChildren().addAll(bg, gameRoot, uiRoot);
+        appRoot.getChildren().addAll(bg, gameRoot);
     }
 
     private void update() {
@@ -150,6 +152,11 @@ public class PlatformGame {
         entity.setTranslateX(x);
         entity.setTranslateY(y);
         entity.setFill(color);
+        // you cna put any property you want, for example
+        // we can now iterate over the nodes, in the "update" function, to find entities with this property, in this context
+        // we can iterate over the "gameRoot" or over the list like "platforms" so we don't iterate over types of entities
+        // we don't need, based on this property we can trigger an event in the update method that
+        entity.getProperties().put("Exmple property", "example value");
 
         gameRoot.getChildren().add(entity);
         return entity;
