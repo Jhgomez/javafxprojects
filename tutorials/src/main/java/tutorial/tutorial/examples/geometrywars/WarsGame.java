@@ -1,0 +1,246 @@
+package tutorial.tutorial.examples.geometrywars;
+
+import com.almasb.fxgl.texture.Texture;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Pane;
+import javafx.scene.media.AudioClip;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
+import javafx.util.Duration;
+
+import java.util.*;
+import java.util.stream.Stream;
+
+public class WarsGame {
+
+    private long lastTimeEnemySpawned = 0, lasTimeShot = 0;
+    private IntegerProperty score = new SimpleIntegerProperty();
+
+    private Random random = new Random();
+
+    private Point2D playerVelocity = new Point2D(0,0);
+
+    private HashMap<KeyCode, Boolean> keys = new HashMap<>();
+    private boolean isLeftMouseButtonPressed = false;
+
+    private ArrayList<Node> enemies = new ArrayList<>();
+
+    private ArrayList<Node> bullets = new ArrayList<>();
+
+    Timeline enemiesTimeline = new Timeline();
+    Timeline shootBulletTimeLine = new Timeline();
+
+    private Pane appRoot = new Pane();
+    private Pane gameRoot = new Pane();
+    private Scene scene =  new Scene(appRoot, 1280, 720);
+
+    private Node player;
+
+    private Texture textureBird;
+    private AudioClip audioShoot;
+    private boolean canShoot = true;
+
+    // uiRoot
+    protected void initUI() {
+        Text scoreText = new Text();
+        scoreText.xProperty().bind(scene.widthProperty().add(-100));
+        scoreText.setY(50);
+        scoreText.textProperty().bind(score.asString());
+
+        appRoot.getChildren().add(scoreText);
+
+        scene.setOnKeyPressed(event -> keys.put(event.getCode(), true));
+        scene.setOnKeyReleased(event -> keys.put(event.getCode(), false));
+        scene.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                isLeftMouseButtonPressed = true;
+            }
+        });
+
+        scene.setOnMouseReleased(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                isLeftMouseButtonPressed = false;
+            }
+        });
+
+        Rectangle bg = new Rectangle();
+        bg.setFill(Color.ORANGE);
+        bg.widthProperty().bind(scene.widthProperty());
+        bg.setHeight(600);
+
+        player = new Rectangle(40, 40, Color.BLUE);
+        player.setTranslateX(640);
+        player.setTranslateY(360);
+        gameRoot.getChildren().add(player);
+
+        // read level info, 1 is a platform, 0 is the avism
+        enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(100), event -> {
+            spawnEnemy();
+        }));
+
+        enemiesTimeline.setCycleCount(Timeline.INDEFINITE);
+        enemiesTimeline.play();
+
+        shootBulletTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(250), event -> {
+            canShoot = true;
+        }));
+
+        shootBulletTimeLine.play();
+
+
+//        final double lastPositionx = enemies.getLast().getTranslateX();
+//
+//        player.translateXProperty().addListener((obs, old, newValue) -> {
+//            int offset = newValue.intValue();
+//
+//            if (offset > 600 && offset < lastPositionx - 600) {
+//                // this will affect all the nodes in the game
+//                // moving them to the left
+//                gameRoot.setLayoutX(-(offset - 600));
+//            }
+//        });
+
+        appRoot.getChildren().addAll(bg, gameRoot);
+    }
+
+    private void spawnEnemy() {
+        Node enemy = new Circle(20, Color.RED);
+        enemy.setTranslateX(random.nextInt(1200));
+        enemy.setTranslateY(random.nextInt(700));
+
+        enemy.getProperties().put("alive", true);
+
+        enemies.add(enemy);
+        gameRoot.getChildren().add(enemy);
+    }
+
+    private void onUpdateEnemies() {
+        playerVelocity = new Point2D(player.getTranslateX(), player.getTranslateY());
+        Point2D enemyPoint;
+
+        for (Node node : enemies) {
+            enemyPoint = playerVelocity.add(-node.getTranslateX(), -node.getTranslateY()).normalize().multiply(1);
+
+            node.setTranslateX(node.getTranslateX() + enemyPoint.getX());
+            node.setTranslateY(node.getTranslateY() + enemyPoint.getY());
+        }
+    }
+
+    private void spawnBullet() {
+
+    }
+
+    protected void onUpdate() {
+        if (isKeyPressed(KeyCode.W)) {
+            movePlayer(0, -5);
+        }
+
+        if (isKeyPressed(KeyCode.A)) {
+            movePlayer(-5, 0);
+        }
+
+        if (isKeyPressed(KeyCode.S)) {
+            movePlayer(0, 5);
+        }
+
+        if (isKeyPressed(KeyCode.D)) {
+            movePlayer(5, 0);
+        }
+
+        if (isLeftMouseButtonPressed && canShoot) {
+            canShoot = false;
+            spawnBullet();
+        }
+
+        for (Node enemy : enemies) {
+            if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+                enemy.getProperties().put("alive", false);
+                score.set(score.get() - 1000);
+            }
+        }
+
+        for (Node bullet : bullets) {
+            for (Node enemy : enemies) {
+                if (enemy.getBoundsInParent().intersects(bullet.getBoundsInParent())) {
+                    bullet.getProperties().put("alive", false);
+                    enemy.getProperties().put("alive", false);
+                    score.set(score.get() + 100);
+                }
+            }
+        }
+
+        List<Node> bulletsToDelete = bullets.stream().filter(bullet -> !(Boolean)bullet.getProperties().get("alive")).toList();
+        List<Node> enemiesToDelete = enemies.stream().filter(enemy -> !(Boolean)enemy.getProperties().get("alive")).toList();
+
+        enemies.removeIf(enemiesToDelete::contains);
+        bullets.removeIf(bulletsToDelete::contains);
+
+        for (Node bullet : bulletsToDelete) {
+            gameRoot.getChildren().remove(bullet);
+        }
+
+        for (Node enemy : enemiesToDelete) {
+            gameRoot.getChildren().remove(enemy);
+        }
+    }
+
+    private void movePlayer(int x, int y) {
+        player.setTranslateX(player.getTranslateX() + x);
+        player.setTranslateY(player.getTranslateY() + y);
+
+        for (Node enemy : enemies) {
+            if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+                enemy.getProperties().put("alive", false);
+                score.set(score.get() - 1000);
+            }
+        }
+    }
+
+    private boolean isKeyPressed(KeyCode keyCode) {
+        Boolean pressed = keys.get(keyCode);
+        return pressed != null ? pressed : false;
+    }
+
+    public void displayScreen(Runnable runnable) {
+        initUI();
+
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.show();
+
+        // by default gives us 60 frames per second, means this update method
+        // will be called 60 times every second
+        Timeline timer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
+            onUpdate();
+            onUpdateEnemies();
+        }));
+
+        timer.setCycleCount(Timeline.INDEFINITE);
+
+        timer.play();
+
+//        Timeline enemiesTimer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
+//
+//        }));
+//
+//        enemiesTimer.setCycleCount(Timeline.INDEFINITE);
+//
+//        enemiesTimer.play();
+
+        stage.setOnCloseRequest(e -> {
+            timer.stop();
+            runnable.run();
+        });
+    }
+}
