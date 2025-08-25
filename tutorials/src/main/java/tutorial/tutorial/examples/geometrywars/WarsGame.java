@@ -8,13 +8,17 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -30,6 +34,7 @@ public class WarsGame {
     private Random random = new Random();
 
     private Point2D playerVelocity = new Point2D(0,0);
+    private Point2D bulletsVelocity = new Point2D(0,0);
 
     private HashMap<KeyCode, Boolean> keys = new HashMap<>();
     private boolean isLeftMouseButtonPressed = false;
@@ -50,6 +55,9 @@ public class WarsGame {
     private Texture textureBird;
     private AudioClip audioShoot;
     private boolean canShoot = true;
+    private boolean isMouseDragging = false;
+    private double mouseXPosition;
+    private double mouseYPosition;
 
     // uiRoot
     protected void initUI() {
@@ -62,15 +70,31 @@ public class WarsGame {
 
         scene.setOnKeyPressed(event -> keys.put(event.getCode(), true));
         scene.setOnKeyReleased(event -> keys.put(event.getCode(), false));
-        scene.setOnMouseClicked(event -> {
+        scene.setOnMousePressed(event -> {
+            System.out.println("mouse pressed");
             if (event.getButton() == MouseButton.PRIMARY) {
                 isLeftMouseButtonPressed = true;
+
+                if (!isMouseDragging) {
+                    mouseXPosition = event.getSceneX();
+                    mouseYPosition = event.getSceneY();
+                }
             }
         });
 
         scene.setOnMouseReleased(event -> {
+            System.out.println("mouse released");
             if (event.getButton() == MouseButton.PRIMARY) {
                 isLeftMouseButtonPressed = false;
+                isMouseDragging = false;
+            }
+        });
+
+        scene.setOnMouseDragged(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                isMouseDragging = true;
+                mouseXPosition = event.getSceneX();
+                mouseYPosition = event.getSceneY();
             }
         });
 
@@ -85,7 +109,7 @@ public class WarsGame {
         gameRoot.getChildren().add(player);
 
         // read level info, 1 is a platform, 0 is the avism
-        enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(100), event -> {
+        enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(1000), event -> {
             spawnEnemy();
         }));
 
@@ -96,6 +120,7 @@ public class WarsGame {
             canShoot = true;
         }));
 
+        shootBulletTimeLine.setCycleCount(Timeline.INDEFINITE);
         shootBulletTimeLine.play();
 
 
@@ -130,7 +155,10 @@ public class WarsGame {
         Point2D enemyPoint;
 
         for (Node node : enemies) {
-            enemyPoint = playerVelocity.add(-node.getTranslateX(), -node.getTranslateY()).normalize().multiply(1);
+            enemyPoint = playerVelocity
+                    .subtract(node.getTranslateX(), node.getTranslateY())
+                    .normalize()
+                    .multiply(2);
 
             node.setTranslateX(node.getTranslateX() + enemyPoint.getX());
             node.setTranslateY(node.getTranslateY() + enemyPoint.getY());
@@ -138,8 +166,30 @@ public class WarsGame {
     }
 
     private void spawnBullet() {
+        // center of player
+        double playerCenterX = player.getTranslateX() + 20;
+        double playerCenterY = player.getTranslateY() + 20;
 
+        //
+        bulletsVelocity = new Point2D(mouseXPosition, mouseYPosition)
+                .subtract(playerCenterX, playerCenterY)
+                .normalize()
+                .multiply(10);
+
+        Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsVelocity.getX(), playerCenterY + bulletsVelocity.getY());
+        bullet.setStrokeWidth(1);
+        bullet.getStrokeDashArray().addAll(3d);
+        bullet.setStrokeDashOffset(1);
+
+        bullet.getProperties().put("alive", true);
+        bullet.getProperties().put("vector", bulletsVelocity);
+
+        bullets.add(bullet);
+        gameRoot.getChildren().add(bullet);
+
+        bullet.toBack();
     }
+
 
     protected void onUpdate() {
         if (isKeyPressed(KeyCode.W)) {
@@ -219,24 +269,63 @@ public class WarsGame {
         stage.setScene(scene);
         stage.show();
 
+        Slider time = new Slider(0, 10, 10);
+        time.setBlockIncrement(1);
+        time.setShowTickLabels(true);
+        time.setShowTickMarks(true);
+        time.setMajorTickUnit(2);
+        time.setMinorTickCount(1);
+
+        Line bullet = new Line(50, 50, 500, 500);
+//        bullet.setStrokeWidth(10);
+        bullet.getStrokeDashArray().addAll(10d);
+        bullet.strokeDashOffsetProperty().bind(time.valueProperty().multiply(20));
+
         // by default gives us 60 frames per second, means this update method
         // will be called 60 times every second
         Timeline timer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
             onUpdate();
-            onUpdateEnemies();
         }));
 
         timer.setCycleCount(Timeline.INDEFINITE);
 
         timer.play();
 
-//        Timeline enemiesTimer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
-//
-//        }));
-//
-//        enemiesTimer.setCycleCount(Timeline.INDEFINITE);
-//
-//        enemiesTimer.play();
+
+
+        Timeline enemiesTimer =  new Timeline(new KeyFrame(Duration.millis(500), e -> {
+            onUpdateEnemies();
+            onUpdateBullets();
+        }));
+
+        enemiesTimer.setCycleCount(Timeline.INDEFINITE);
+
+        enemiesTimer.play();
+
+        time.valueProperty().addListener((observable, oldValue, newValue) -> {
+            enemiesTimer.stop();
+            enemiesTimer.getKeyFrames().clear();
+
+            enemiesTimer.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+                onUpdateEnemies();
+                onUpdateBullets();
+            }));
+
+            enemiesTimer.play();
+
+            timer.stop();
+            timer.getKeyFrames().clear();
+
+            timer.getKeyFrames().add(new KeyFrame(Duration.millis(time.getValue() * 10), e -> {
+                onUpdate();
+            }));
+
+            timer.play();
+        });
+
+        time.layoutXProperty().bind(appRoot.widthProperty().add(-200));
+        time.setLayoutY(30);
+        appRoot.getChildren().add(time);
 
         stage.setOnCloseRequest(e -> {
             timer.stop();
