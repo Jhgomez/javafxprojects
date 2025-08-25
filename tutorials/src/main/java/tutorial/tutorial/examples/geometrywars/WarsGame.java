@@ -1,6 +1,5 @@
 package tutorial.tutorial.examples.geometrywars;
 
-import com.almasb.fxgl.texture.Texture;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.IntegerProperty;
@@ -11,29 +10,22 @@ import javafx.scene.Scene;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class WarsGame {
 
     private IntegerProperty score = new SimpleIntegerProperty();
 
     private Random random = new Random();
-
-    private Point2D playerVelocity = new Point2D(0,0);
-    private Point2D bulletsVelocity = new Point2D(0,0);
 
     private HashMap<KeyCode, Boolean> keys = new HashMap<>();
     private boolean isLeftMouseButtonPressed = false;
@@ -136,39 +128,41 @@ public class WarsGame {
         gameRoot.getChildren().add(enemy);
     }
 
-    private void onUpdateEnemies() {
-        playerVelocity = new Point2D(player.getTranslateX(), player.getTranslateY());
-        Point2D enemyPoint;
+    private void updateEnemies() {
+        // This is the player point so we can direct the enemies node to this coordinate
+        Point2D playerVelocity = new Point2D(player.getTranslateX(), player.getTranslateY());
+        Point2D enemyToPlayerVector;
 
         for (Node node : enemies) {
-            enemyPoint = playerVelocity
+            enemyToPlayerVector = playerVelocity
                     .subtract(node.getTranslateX(), node.getTranslateY())
                     .normalize()
                     .multiply(2);
 
-            node.setTranslateX(node.getTranslateX() + enemyPoint.getX());
-            node.setTranslateY(node.getTranslateY() + enemyPoint.getY());
+            node.setTranslateX(node.getTranslateX() + enemyToPlayerVector.getX());
+            node.setTranslateY(node.getTranslateY() + enemyToPlayerVector.getY());
         }
     }
 
     private void spawnBullet() {
-        // center of player
+        // center of player, we will originate bullets from this coordinate
         double playerCenterX = player.getTranslateX() + 20;
         double playerCenterY = player.getTranslateY() + 20;
 
-        //
-        bulletsVelocity = new Point2D(mouseXPosition, mouseYPosition)
+        // this is vector from
+        Point2D bulletsOriginToMousePositionVector = new Point2D(mouseXPosition, mouseYPosition)
                 .subtract(playerCenterX, playerCenterY)
                 .normalize()
                 .multiply(10);
 
-        Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsVelocity.getX(), playerCenterY + bulletsVelocity.getY());
+        // We create the bullet with the right angle using just the vector position
+        Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsOriginToMousePositionVector.getX(), playerCenterY + bulletsOriginToMousePositionVector.getY());
         bullet.setStrokeWidth(1);
         bullet.getStrokeDashArray().addAll(3d);
         bullet.setStrokeDashOffset(1);
 
         bullet.getProperties().put("alive", true);
-        bullet.getProperties().put("vector", bulletsVelocity);
+        bullet.getProperties().put("vector", bulletsOriginToMousePositionVector);
 
         bullets.add(bullet);
         gameRoot.getChildren().add(bullet);
@@ -176,7 +170,7 @@ public class WarsGame {
         bullet.toBack();
     }
 
-    private void onUpdateBullets() {
+    private void updateBullets() {
         for (Node node : bullets) {
             Point2D bulletVector = (Point2D) node.getProperties().get("vector");
 
@@ -185,7 +179,7 @@ public class WarsGame {
         }
     }
 
-    protected void onUpdate() {
+    protected void mainUpdate() {
         if (isKeyPressed(KeyCode.W)) {
             movePlayer(0, -5);
         }
@@ -207,6 +201,7 @@ public class WarsGame {
             spawnBullet();
         }
 
+        // we update(remove) enemies here so it has the same response time as the player
         for (Node enemy : enemies) {
             if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
@@ -214,6 +209,7 @@ public class WarsGame {
             }
         }
 
+        // we update(remove) bullets here so it has the same response time as the player
         for (Node bullet : bullets) {
             for (Node enemy : enemies) {
                 if (enemy.getBoundsInParent().intersects(bullet.getBoundsInParent())) {
@@ -263,66 +259,70 @@ public class WarsGame {
         stage.setScene(scene);
         stage.show();
 
-        Slider time = new Slider(0, 10, 10);
-        time.setBlockIncrement(1);
-        time.setShowTickLabels(true);
-        time.setShowTickMarks(true);
-        time.setMajorTickUnit(2);
-        time.setMinorTickCount(1);
+        Slider slider = new Slider(0, 100, 10);
+        slider.setBlockIncrement(1);
+        slider.setShowTickLabels(true);
+        slider.setShowTickMarks(true);
+        slider.setMajorTickUnit(10);
+        slider.setMinorTickCount(5);
 
-        Line bullet = new Line(50, 50, 500, 500);
-//        bullet.setStrokeWidth(10);
-        bullet.getStrokeDashArray().addAll(10d);
-        bullet.strokeDashOffsetProperty().bind(time.valueProperty().multiply(20));
-
-        // by default gives us 60 frames per second, means this update method
-        // will be called 60 times every second
-        Timeline timer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
-            onUpdate();
+        // thread updating player position, dead bullets and dead enemies
+        Timeline mainTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+            mainUpdate();
         }));
+        mainTimeLine.setCycleCount(Timeline.INDEFINITE);
+        mainTimeLine.play();
 
-        timer.setCycleCount(Timeline.INDEFINITE);
-
-        timer.play();
-
-
-
-        Timeline enemiesTimer =  new Timeline(new KeyFrame(Duration.millis(500), e -> {
-            onUpdateEnemies();
-            onUpdateBullets();
+        Timeline enemiesTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+            updateEnemies();
         }));
+        enemiesTimeLine.setCycleCount(Timeline.INDEFINITE);
+        enemiesTimeLine.play();
 
-        enemiesTimer.setCycleCount(Timeline.INDEFINITE);
+        Timeline bulletsTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+            updateBullets();
+        }));
+        bulletsTimeLine.setCycleCount(Timeline.INDEFINITE);
+        bulletsTimeLine.play();
 
-        enemiesTimer.play();
-
-        time.valueProperty().addListener((observable, oldValue, newValue) -> {
-            enemiesTimer.stop();
-            enemiesTimer.getKeyFrames().clear();
-
-            enemiesTimer.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
-                onUpdateEnemies();
-                onUpdateBullets();
+        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            // reconfigure enemies timer
+            enemiesTimeLine.stop();
+            enemiesTimeLine.getKeyFrames().clear();
+            enemiesTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+                updateEnemies();
             }));
+            enemiesTimeLine.play();
 
-            enemiesTimer.play();
-
-            timer.stop();
-            timer.getKeyFrames().clear();
-
-            timer.getKeyFrames().add(new KeyFrame(Duration.millis(time.getValue() * 10), e -> {
-                onUpdate();
+            // reconfigure bullets timer
+            bulletsTimeLine.stop();
+            bulletsTimeLine.getKeyFrames().clear();
+            bulletsTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+                updateBullets();
             }));
+            bulletsTimeLine.play();
 
-            timer.play();
+            // reconfigure main timer
+            mainTimeLine.stop();
+            mainTimeLine.getKeyFrames().clear();
+            mainTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+                mainUpdate();
+            }));
+            mainTimeLine.play();
         });
 
-        time.layoutXProperty().bind(appRoot.widthProperty().add(-200));
-        time.setLayoutY(30);
-        appRoot.getChildren().add(time);
+        slider.layoutXProperty().bind(appRoot.widthProperty().add(-200));
+        slider.setLayoutY(30);
+        appRoot.getChildren().add(slider);
 
         stage.setOnCloseRequest(e -> {
-            timer.stop();
+            mainTimeLine.stop();
+            bulletsTimeLine.stop();
+            enemiesTimeLine.stop();
+
+            enemiesTimeline.stop();
+            shootBulletTimeLine.stop();
+
             runnable.run();
         });
     }
