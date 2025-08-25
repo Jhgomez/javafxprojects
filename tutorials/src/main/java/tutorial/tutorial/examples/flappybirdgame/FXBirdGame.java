@@ -29,10 +29,7 @@ import java.util.Random;
 public class FXBirdGame {
 
     private IntegerProperty score = new SimpleIntegerProperty();
-    private BooleanProperty running = new SimpleBooleanProperty();
     private Random random = new Random();
-
-    private Point2D playerVelocity = new Point2D(0,0);
 
     private HashMap<KeyCode, Boolean> keys = new HashMap<>();
 

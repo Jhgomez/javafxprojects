@@ -9,6 +9,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
+import tutorial.tutorial.examples.flappybirdgame.FXBirdGame;
+import tutorial.tutorial.examples.geometrywars.WarsGame;
 import tutorial.tutorial.examples.platformgame.PlatformGame;
 import tutorial.tutorial.examples.vector.Vector;
 import tutorial.tutorial.media.PlayVideo;
@@ -31,6 +33,8 @@ public class TutorialApp extends Application {
         Button video = new Button("Video");
         Button vector = new Button("Vector Example");
         Button platformGame = new Button("Platform Game");
+        Button birdGame = new Button("Bird Game");
+        Button warGame = new Button("War Game");
 
         Runnable runnable = stage::show;
 
@@ -99,8 +103,19 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        birdGame.setOnAction(e -> {
+            new FXBirdGame().displayScreen(runnable);
+            stage.hide();
+        });
+
+        warGame.setOnAction(e -> {
+            new WarsGame().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox.setVgrow(_2DShapes, Priority.ALWAYS);
         _2DShapes.setMaxHeight(Double.MAX_VALUE);
+
         VBox root = new VBox(
                 16.0,
                 _2DShapes,
@@ -115,7 +130,9 @@ public class TutorialApp extends Application {
                 _3DProperties,
                 video,
                 vector,
-                platformGame
+                platformGame,
+                birdGame,
+                warGame
         );
 
         root.setAlignment(Pos.CENTER);
