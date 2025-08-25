@@ -190,6 +190,14 @@ public class WarsGame {
         bullet.toBack();
     }
 
+    private void onUpdateBullets() {
+        for (Node node : bullets) {
+            Point2D bulletVector = (Point2D) node.getProperties().get("vector");
+
+            node.setTranslateX(node.getTranslateX() + bulletVector.getX());
+            node.setTranslateY(node.getTranslateY() + bulletVector.getY());
+        }
+    }
 
     protected void onUpdate() {
         if (isKeyPressed(KeyCode.W)) {
