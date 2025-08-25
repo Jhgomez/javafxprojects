@@ -54,7 +54,7 @@ public class WarsGame {
         // set up score text
         Text scoreText = new Text();
         scoreText.xProperty().bind(scene.widthProperty().add(-100));
-        scoreText.setY(50);
+        scoreText.setY(100);
         scoreText.textProperty().bind(score.asString());
 
         gameRoot.getChildren().add(scoreText);
@@ -119,8 +119,8 @@ public class WarsGame {
 
     private void spawnEnemy() {
         Node enemy = new Circle(20, Color.RED);
-        enemy.setTranslateX(random.nextInt(1200));
-        enemy.setTranslateY(random.nextInt(700));
+        enemy.setTranslateX(random.nextInt(1280));
+        enemy.setTranslateY(random.nextInt(720));
 
         enemy.getProperties().put("alive", true);
 
@@ -181,19 +181,19 @@ public class WarsGame {
 
     protected void mainUpdate() {
         if (isKeyPressed(KeyCode.W)) {
-            movePlayer(0, -5);
+            moveUp(-5);
         }
 
         if (isKeyPressed(KeyCode.A)) {
-            movePlayer(-5, 0);
+            moveLeft(-5);
         }
 
         if (isKeyPressed(KeyCode.S)) {
-            movePlayer(0, 5);
+            moveDown(5);
         }
 
         if (isKeyPressed(KeyCode.D)) {
-            movePlayer(5, 0);
+            moveRight(5);
         }
 
         if (isLeftMouseButtonPressed && canShoot) {
@@ -235,16 +235,45 @@ public class WarsGame {
         }
     }
 
-    private void movePlayer(int x, int y) {
-        player.setTranslateX(player.getTranslateX() + x);
-        player.setTranslateY(player.getTranslateY() + y);
+    private void moveLeft(int x) {
+        // player.getTranslateX() could be substituted by player.getBoundsInParent().getMinX()
+        boolean reachedLeftLimit = player.getTranslateX() == 0;
 
-        for (Node enemy : enemies) {
-            if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
-                enemy.getProperties().put("alive", false);
-                score.set(score.get() - 1000);
-            }
+        if (reachedLeftLimit) {
+            return;
         }
+
+        player.setTranslateX(player.getTranslateX() + x);
+    }
+
+    private void moveRight(int x) {
+        boolean reachedRightLimit = player.getBoundsInParent().getMaxX() >= scene.widthProperty().get();
+
+        if (reachedRightLimit) {
+            return;
+        }
+
+        player.setTranslateX(player.getTranslateX() + x);
+    }
+
+    private void moveDown(int y) {
+        boolean reachedBottomLimit = player.getBoundsInParent().getMaxY() >= scene.heightProperty().getValue();
+
+        if (reachedBottomLimit) {
+            return;
+        }
+
+        player.setTranslateY(player.getTranslateY() + y);
+    }
+
+    private void moveUp(int y) {
+        boolean reachedTopLimit = player.getTranslateY() == 0;
+
+        if (reachedTopLimit) {
+            return;
+        }
+
+        player.setTranslateY(player.getTranslateY() + y);
     }
 
     private boolean isKeyPressed(KeyCode keyCode) {
@@ -266,20 +295,25 @@ public class WarsGame {
         slider.setMajorTickUnit(10);
         slider.setMinorTickCount(5);
 
+        // we could have managed all items in one thread but this we we leverage concurrency and make each type of element
+        // move as much concurrently as possible
+
         // thread updating player position, dead bullets and dead enemies
-        Timeline mainTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+        Timeline mainTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
             mainUpdate();
         }));
         mainTimeLine.setCycleCount(Timeline.INDEFINITE);
         mainTimeLine.play();
 
-        Timeline enemiesTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+        // thread updating enemies position
+        Timeline enemiesTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
             updateEnemies();
         }));
         enemiesTimeLine.setCycleCount(Timeline.INDEFINITE);
         enemiesTimeLine.play();
 
-        Timeline bulletsTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*10), e -> {
+        // thread updating bullets position
+        Timeline bulletsTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
             updateBullets();
         }));
         bulletsTimeLine.setCycleCount(Timeline.INDEFINITE);
@@ -289,7 +323,7 @@ public class WarsGame {
             // reconfigure enemies timer
             enemiesTimeLine.stop();
             enemiesTimeLine.getKeyFrames().clear();
-            enemiesTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+            enemiesTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
                 updateEnemies();
             }));
             enemiesTimeLine.play();
@@ -297,7 +331,7 @@ public class WarsGame {
             // reconfigure bullets timer
             bulletsTimeLine.stop();
             bulletsTimeLine.getKeyFrames().clear();
-            bulletsTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+            bulletsTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
                 updateBullets();
             }));
             bulletsTimeLine.play();
@@ -305,7 +339,7 @@ public class WarsGame {
             // reconfigure main timer
             mainTimeLine.stop();
             mainTimeLine.getKeyFrames().clear();
-            mainTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 10), e -> {
+            mainTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
                 mainUpdate();
             }));
             mainTimeLine.play();
