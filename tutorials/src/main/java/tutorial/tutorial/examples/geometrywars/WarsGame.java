@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 
 public class WarsGame {
 
-    private long lastTimeEnemySpawned = 0, lasTimeShot = 0;
     private IntegerProperty score = new SimpleIntegerProperty();
 
     private Random random = new Random();
@@ -52,26 +51,28 @@ public class WarsGame {
 
     private Node player;
 
-    private Texture textureBird;
-    private AudioClip audioShoot;
     private boolean canShoot = true;
     private boolean isMouseDragging = false;
+
     private double mouseXPosition;
     private double mouseYPosition;
 
     // uiRoot
     protected void initUI() {
+        // set up score text
         Text scoreText = new Text();
         scoreText.xProperty().bind(scene.widthProperty().add(-100));
         scoreText.setY(50);
         scoreText.textProperty().bind(score.asString());
 
-        appRoot.getChildren().add(scoreText);
+        gameRoot.getChildren().add(scoreText);
 
+        // set up keys and mouse events on the scene
         scene.setOnKeyPressed(event -> keys.put(event.getCode(), true));
         scene.setOnKeyReleased(event -> keys.put(event.getCode(), false));
+
+        // this would be first mouse event called
         scene.setOnMousePressed(event -> {
-            System.out.println("mouse pressed");
             if (event.getButton() == MouseButton.PRIMARY) {
                 isLeftMouseButtonPressed = true;
 
@@ -82,14 +83,7 @@ public class WarsGame {
             }
         });
 
-        scene.setOnMouseReleased(event -> {
-            System.out.println("mouse released");
-            if (event.getButton() == MouseButton.PRIMARY) {
-                isLeftMouseButtonPressed = false;
-                isMouseDragging = false;
-            }
-        });
-
+        // if mouse is dragged after it is pressed, this will be called
         scene.setOnMouseDragged(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
                 isMouseDragging = true;
@@ -98,17 +92,21 @@ public class WarsGame {
             }
         });
 
-        Rectangle bg = new Rectangle();
-        bg.setFill(Color.ORANGE);
-        bg.widthProperty().bind(scene.widthProperty());
-        bg.setHeight(600);
+        // this will be the last mouse callback
+        scene.setOnMouseReleased(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                isLeftMouseButtonPressed = false;
+                isMouseDragging = false;
+            }
+        });
 
+        // create player
         player = new Rectangle(40, 40, Color.BLUE);
         player.setTranslateX(640);
         player.setTranslateY(360);
         gameRoot.getChildren().add(player);
 
-        // read level info, 1 is a platform, 0 is the avism
+        // start a thread that will create enemies every second
         enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(1000), event -> {
             spawnEnemy();
         }));
@@ -116,6 +114,7 @@ public class WarsGame {
         enemiesTimeline.setCycleCount(Timeline.INDEFINITE);
         enemiesTimeline.play();
 
+        // start a thread that lets shoot only every 0.25 seconds
         shootBulletTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(250), event -> {
             canShoot = true;
         }));
@@ -123,20 +122,7 @@ public class WarsGame {
         shootBulletTimeLine.setCycleCount(Timeline.INDEFINITE);
         shootBulletTimeLine.play();
 
-
-//        final double lastPositionx = enemies.getLast().getTranslateX();
-//
-//        player.translateXProperty().addListener((obs, old, newValue) -> {
-//            int offset = newValue.intValue();
-//
-//            if (offset > 600 && offset < lastPositionx - 600) {
-//                // this will affect all the nodes in the game
-//                // moving them to the left
-//                gameRoot.setLayoutX(-(offset - 600));
-//            }
-//        });
-
-        appRoot.getChildren().addAll(bg, gameRoot);
+        appRoot.getChildren().addAll(gameRoot);
     }
 
     private void spawnEnemy() {
