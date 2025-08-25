@@ -176,6 +176,22 @@ public class WarsGame {
 
             node.setTranslateX(node.getTranslateX() + bulletVector.getX());
             node.setTranslateY(node.getTranslateY() + bulletVector.getY());
+
+            // JavaFx increases from 0 to an positive number in the XAXIS from left to right and in the YAXIS from top top
+            // to bottom, no matter how you create your strings the maxY is always going to be the edge that is in the bottom direction
+            // and the maxX will be the edge that is in right direction, this is why if I want to delete bullets that goes beyodn the
+            // left limit I need to check the maxX, bullets beyond top limit I need to check for maxY, right limit I need to check
+            // minX and bottom limit I need to check the minY
+
+            boolean reachedLeftLimit = node.getBoundsInParent().getMaxX() <= 0;
+            boolean reachedTopLimit = node.getBoundsInParent().getMaxY() <= 0;
+
+            boolean reachedRightLimit = node.getBoundsInParent().getMinX() >= scene.widthProperty().get();
+            boolean reachedBottomLimit = node.getBoundsInParent().getMinY() >= scene.heightProperty().get();
+
+            if (reachedBottomLimit || reachedLeftLimit || reachedTopLimit || reachedRightLimit) {
+                node.getProperties().put("alive", false);
+            }
         }
     }
 
