@@ -32,8 +32,8 @@ public class WarsGame {
     private boolean isLeftMouseButtonPressed = false;
 
     private ArrayList<Node> enemies = new ArrayList<>();
-
     private ArrayList<Node> bullets = new ArrayList<>();
+    private ArrayList<Node> particles = new ArrayList<>();
 
     Timeline enemiesTimeline = new Timeline();
     Timeline shootBulletTimeLine = new Timeline();
@@ -235,7 +235,7 @@ public class WarsGame {
                     enemy.getProperties().put("alive", false);
 //                    score.set(score.get() + 100);
                     playScoreAnimation(enemy, 100);
-//                    playDeathAnimation(enemy);
+                    playDeathAnimation(enemy);
                 }
             }
         }
@@ -243,16 +243,61 @@ public class WarsGame {
         List<Node> bulletsToDelete = bullets.stream().filter(bullet -> !(Boolean)bullet.getProperties().get("alive")).toList();
         List<Node> enemiesToDelete = enemies.stream().filter(enemy -> !(Boolean)enemy.getProperties().get("alive")).toList();
 
-        enemies.removeIf(enemiesToDelete::contains);
-        bullets.removeIf(bulletsToDelete::contains);
+        enemies.removeAll(enemiesToDelete);
+        bullets.removeAll(bulletsToDelete);
 
-        for (Node bullet : bulletsToDelete) {
-            gameRoot.getChildren().remove(bullet);
+        gameRoot.getChildren().removeAll(bulletsToDelete);
+        gameRoot.getChildren().removeAll(enemiesToDelete);
+//        enemies.removeIf(enemiesToDelete::contains);
+//        bullets.removeIf(bulletsToDelete::contains);
+
+//        for (Node bullet : bulletsToDelete) {
+//            gameRoot.getChildren().remove(bullet);
+//        }
+
+//        for (Node enemy : enemiesToDelete) {
+//            gameRoot.getChildren().remove(enemy);
+//        }
+    }
+
+    private void playDeathAnimation(Node enemy) {
+        // we don't do all angles to avoid loading too many particles
+        for (int i = 0; i < 360; i = i + 16) {
+            for (int j = 0; j <= 4; j++) {
+                Circle particle = new Circle(2, Color.RED);
+                particle.setTranslateX(Math.cos(i) * (j * 4 + 2) + enemy.getTranslateX());
+                particle.setTranslateY(Math.sin(i) * (j * 4 + 2) + enemy.getTranslateY());
+
+                Point2D vector = new Point2D(random.nextDouble() - 0.5, random.nextDouble() - 0.8).multiply(2);
+
+                particle.getProperties().put("alive", true);
+                particle.getProperties().put("vector", vector);
+
+                particles.add(particle);
+                appRoot.getChildren().add(particle);
+            }
+        }
+    }
+
+    private void updateParticles() {
+        for (Node node : particles) {
+            Point2D vector = (Point2D)node.getProperties().get("vector");
+
+            node.getProperties().put("vector", vector.add(0, 0.5));
+
+            node.setTranslateX(node.getTranslateX() + vector.getX());
+            node.setTranslateY(node.getTranslateY() + vector.getY());
+
+            // I could remove particles here directly
+            if (node.getTranslateY() >= scene.heightProperty().get()) {
+                node.getProperties().put("alive", false);
+            }
         }
 
-        for (Node enemy : enemiesToDelete) {
-            gameRoot.getChildren().remove(enemy);
-        }
+        // but I will remove it here
+        List<Node> particlesToRemove = particles.stream().filter(p -> !(Boolean)p.getProperties().get("alive")).toList();
+        particles.removeAll(particlesToRemove);
+        appRoot.getChildren().removeAll(particlesToRemove);
     }
 
     private void playScoreAnimation(Node player, int score) {
@@ -262,7 +307,7 @@ public class WarsGame {
 
         gameRoot.getChildren().add(textScore);
 
-        TranslateTransition tt = new TranslateTransition(Duration.millis(1000), textScore);
+        TranslateTransition tt = new TranslateTransition(Duration.millis(1500), textScore);
         tt.setToX(scene.widthProperty().add(-120).getValue());
         tt.setToY(100);
         tt.setOnFinished(event -> {
@@ -356,6 +401,12 @@ public class WarsGame {
         bulletsTimeLine.setCycleCount(Timeline.INDEFINITE);
         bulletsTimeLine.play();
 
+        Timeline particlesTimeLine = new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
+            updateParticles();
+        }));
+        particlesTimeLine.setCycleCount(Timeline.INDEFINITE);
+        particlesTimeLine.play();
+
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
             // reconfigure enemies timer
             enemiesTimeLine.stop();
@@ -380,9 +431,17 @@ public class WarsGame {
                 mainUpdate();
             }));
             mainTimeLine.play();
+
+            // reconfigure particles timer
+            particlesTimeLine.stop();
+            particlesTimeLine.getKeyFrames().clear();
+            particlesTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
+                updateParticles();
+            }));
+            particlesTimeLine.play();
         });
 
-        slider.layoutXProperty().bind(appRoot.widthProperty().add(-200));
+        slider.layoutXProperty().bind(appRoot.widthProperty().subtract(200));
         slider.setLayoutY(30);
         appRoot.getChildren().add(slider);
 
@@ -390,6 +449,7 @@ public class WarsGame {
             mainTimeLine.stop();
             bulletsTimeLine.stop();
             enemiesTimeLine.stop();
+            particlesTimeLine.stop();
 
             enemiesTimeline.stop();
             shootBulletTimeLine.stop();
