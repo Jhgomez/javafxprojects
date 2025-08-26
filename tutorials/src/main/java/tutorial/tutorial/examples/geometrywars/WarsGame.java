@@ -2,6 +2,7 @@ package tutorial.tutorial.examples.geometrywars;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point2D;
@@ -221,7 +222,8 @@ public class WarsGame {
         for (Node enemy : enemies) {
             if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
-                score.set(score.get() - 1000);
+//                score.set(score.get() - 1000);
+                playScoreAnimation(player, -1000);
             }
         }
 
@@ -231,7 +233,9 @@ public class WarsGame {
                 if (enemy.getBoundsInParent().intersects(bullet.getBoundsInParent())) {
                     bullet.getProperties().put("alive", false);
                     enemy.getProperties().put("alive", false);
-                    score.set(score.get() + 100);
+//                    score.set(score.get() + 100);
+                    playScoreAnimation(enemy, 100);
+//                    playDeathAnimation(enemy);
                 }
             }
         }
@@ -249,6 +253,23 @@ public class WarsGame {
         for (Node enemy : enemiesToDelete) {
             gameRoot.getChildren().remove(enemy);
         }
+    }
+
+    private void playScoreAnimation(Node player, int score) {
+        Text textScore = new Text(String.valueOf(score));
+        textScore.setTranslateX(player.getTranslateX());
+        textScore.setTranslateY(player.getTranslateY());
+
+        gameRoot.getChildren().add(textScore);
+
+        TranslateTransition tt = new TranslateTransition(Duration.millis(1000), textScore);
+        tt.setToX(scene.widthProperty().add(-120).getValue());
+        tt.setToY(100);
+        tt.setOnFinished(event -> {
+            gameRoot.getChildren().remove(textScore);
+            this.score.set(this.score.get() + score);
+        });
+        tt.play();
     }
 
     private void moveLeft(int x) {
