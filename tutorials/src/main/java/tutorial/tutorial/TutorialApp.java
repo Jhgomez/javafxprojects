@@ -31,6 +31,7 @@ public class TutorialApp extends Application {
         Button images = new Button("Images");
         Button _3DProperties = new Button("Properties 3D Shapes");
         Button video = new Button("Video");
+        Button events = new Button("Events");
         Button vector = new Button("Vector Example");
         Button platformGame = new Button("Platform Game");
         Button birdGame = new Button("Bird Game");
@@ -93,6 +94,11 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        events.setOnAction(e -> {
+            new Events().displayScreen(runnable);
+            stage.hide();
+        });
+
         vector.setOnAction(e -> {
             new Vector().displayScreen(runnable);
             stage.hide();
@@ -129,6 +135,7 @@ public class TutorialApp extends Application {
                 images,
                 _3DProperties,
                 video,
+                events,
                 vector,
                 platformGame,
                 birdGame,
