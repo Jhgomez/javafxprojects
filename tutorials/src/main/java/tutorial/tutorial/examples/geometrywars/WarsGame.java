@@ -5,6 +5,10 @@ import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -12,6 +16,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
+import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -37,32 +42,71 @@ public class WarsGame {
 
     Timeline enemiesTimeline = new Timeline();
     Timeline shootBulletTimeLine = new Timeline();
+    Timeline powerupSTimeLine = new Timeline();
+    Timeline laserTimeLine = new Timeline();
+    Timeline traceTimeLine = new Timeline();
 
     private Pane appRoot = new Pane();
     private Pane gameRoot = new Pane();
     private Scene scene =  new Scene(appRoot, 1280, 720);
+    
+//    private ObservableList<Node> gameNodes = gameRoot.getChildren();
 
     private Node player;
 
     private boolean canShoot = true;
+    private boolean canShootLaser = false;
     private boolean isMouseDragging = false;
 
     private double mouseXPosition;
     private double mouseYPosition;
 
+    private Text fpsText = new Text();
+
+    private AudioClip soundShoot, soundPower, soundExplosion, soundLaserReady, soundLaserShoot;
+
     // uiRoot
     protected void initUI() {
+        // add background
+        Rectangle bg = new Rectangle(0, 0);
+        bg.widthProperty().bind(scene.widthProperty());
+        bg.heightProperty().bind(scene.heightProperty());
+
+        gameRoot.getChildren().add(bg);
+
+        // intialize audio objects
+        soundShoot = new AudioClip(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/sounds/shoot.wav")).toExternalForm());
+        soundExplosion = new AudioClip(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/sounds/explosion.wav")).toExternalForm());
+        soundLaserReady = new AudioClip(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/sounds/laser_ready.wav")).toExternalForm());
+        soundLaserShoot = new AudioClip(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/sounds/laser_shoot.wav")).toExternalForm());
+        soundPower = new AudioClip(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/sounds/powerup.wav")).toExternalForm());
+
         // set up score text
         Text scoreText = new Text();
         scoreText.xProperty().bind(scene.widthProperty().add(-100));
         scoreText.setY(100);
         scoreText.textProperty().bind(score.asString());
+        scoreText.setFill(Color.WHITE);
 
         gameRoot.getChildren().add(scoreText);
 
         // set up keys and mouse events on the scene
-        scene.setOnKeyPressed(event -> keys.put(event.getCode(), true));
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() != KeyCode.ESCAPE) {
+                keys.put(event.getCode(), true);
+//                gameRoot.fireEvent(new javafx.event.Event());
+            }
+        });
         scene.setOnKeyReleased(event -> keys.put(event.getCode(), false));
+
+        // difference between keyTyped and keyPRessed is that keyPressed is captured while again
+        // and again while the key is pressed while keyTyped is only triggered once, meaning
+        // keyPressed is capturing holding a key
+        scene.setOnKeyTyped(event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                keys.put(event.getCode(), true);
+            }
+        });
 
         // this would be first mouse event called
         scene.setOnMousePressed(event -> {
@@ -93,11 +137,7 @@ public class WarsGame {
             }
         });
 
-        // create player
-        player = new Rectangle(40, 40, Color.BLUE);
-        player.setTranslateX(640);
-        player.setTranslateY(360);
-        gameRoot.getChildren().add(player);
+        spawnPlayer();
 
         // start a thread that will create enemies every second
         enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(1000), event -> {
@@ -112,13 +152,64 @@ public class WarsGame {
             canShoot = true;
         }));
 
+        laserTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(5000), event -> {
+            canShootLaser = true;
+        }));
+
         shootBulletTimeLine.setCycleCount(Timeline.INDEFINITE);
         shootBulletTimeLine.play();
 
         appRoot.getChildren().addAll(gameRoot);
     }
 
+    private void spawnPlayer() {
+        // create player
+        player = new Rectangle(40, 40, Color.BLUE);
+        player.setTranslateX(640);
+        player.setTranslateY(360);
+
+        gameRoot.getChildren().add(player);
+
+        player.addEventHandler(GameEvent.DEATH, event -> {
+            event.callback.run();
+
+            // `target` is the node that was assigned this handler, in this case it is "enemy", we could also get a
+            // `source` which should be the Pane this node is living in
+            Node player = (Node) event.getTarget();
+
+            soundExplosion.play();
+
+            playScoreAnimation(player, -1000);
+
+            int middleX = scene.widthProperty().intValue() / 2;
+            int middleY = scene.heightProperty().intValue() / 2;
+
+            double newX = random.nextInt(scene.widthProperty().intValue());
+            double newY = random.nextInt(scene.heightProperty().intValue());
+
+            double maxX = scene.widthProperty().get() - 40;
+
+            if (newX > maxX) {
+                newX = maxX;
+            }
+
+            double maxY = scene.heightProperty().get() - 40 - 5;
+
+            if (newY > maxY) {
+                newY = maxY;
+            }
+
+            player.setTranslateX(newX);
+            player.setTranslateY(newY);
+
+            // we consume the event so it doesn't bubble to other nodes in the buildEventDispatchChain
+            event.consume();
+        });
+    }
+
     private void spawnEnemy() {
+        if (enemies.size() > 7) return;
+
         Node enemy = new Circle(20, Color.RED);
         enemy.setTranslateX(random.nextInt(1280));
         enemy.setTranslateY(random.nextInt(720));
@@ -127,6 +218,19 @@ public class WarsGame {
 
         enemies.add(enemy);
         gameRoot.getChildren().add(enemy);
+
+        enemy.addEventHandler(GameEvent.DEATH, event -> {
+            event.callback.run();
+
+            // `target` is the node that was assigned this handler, in this case it is "enemy", we could also get a
+            // `source` which should be the Pane this node is living in
+            Node deadEnemy = (Node) event.getTarget();
+
+            gameRoot.getChildren().remove(deadEnemy);
+
+            // we consume the event so it doesn't bubble to other nodes in the buildEventDispatchChain
+            event.consume();
+        });
     }
 
     private void updateEnemies() {
@@ -158,6 +262,7 @@ public class WarsGame {
 
         // We create the bullet with the right angle using just the vector position
         Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsOriginToMousePositionVector.getX(), playerCenterY + bulletsOriginToMousePositionVector.getY());
+        bullet.setStroke(Color.WHITE);
         bullet.setStrokeWidth(1);
         bullet.getStrokeDashArray().addAll(3d);
         bullet.setStrokeDashOffset(1);
@@ -168,7 +273,9 @@ public class WarsGame {
         bullets.add(bullet);
         gameRoot.getChildren().add(bullet);
 
-        bullet.toBack();
+//        bullet.toBack();
+
+        soundShoot.play();
     }
 
     private void updateBullets() {
@@ -213,6 +320,10 @@ public class WarsGame {
             moveRight(5);
         }
 
+        if (isKeyPressed(KeyCode.SPACE)) {
+//            spawnLaser();
+        }
+
         if (isLeftMouseButtonPressed && canShoot) {
             canShoot = false;
             spawnBullet();
@@ -223,7 +334,9 @@ public class WarsGame {
             if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
 //                score.set(score.get() - 1000);
-                playScoreAnimation(player, -1000);
+                enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+
+                player.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
             }
         }
 
@@ -234,8 +347,17 @@ public class WarsGame {
                     bullet.getProperties().put("alive", false);
                     enemy.getProperties().put("alive", false);
 //                    score.set(score.get() + 100);
-                    playScoreAnimation(enemy, 100);
-                    playDeathAnimation(enemy);
+
+                    // I would remove from list here also but it would cause a ConcurrentModificationException
+                    // so for that I will keep using the "alive" property and the event handler will automatically
+                    // delete the node from the pane containing it and the node will be removed from the list of
+                    // enemies somewhere else
+                    enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {
+                        playScoreAnimation(enemy, 100);
+                        playDeathAnimation(enemy);
+                    }));
+
+                    bullet.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
                 }
             }
         }
@@ -247,7 +369,7 @@ public class WarsGame {
         bullets.removeAll(bulletsToDelete);
 
         gameRoot.getChildren().removeAll(bulletsToDelete);
-        gameRoot.getChildren().removeAll(enemiesToDelete);
+//        gameRoot.getChildren().removeAll(enemiesToDelete);
 //        enemies.removeIf(enemiesToDelete::contains);
 //        bullets.removeIf(bulletsToDelete::contains);
 
@@ -283,7 +405,7 @@ public class WarsGame {
         for (Node node : particles) {
             Point2D vector = (Point2D)node.getProperties().get("vector");
 
-            node.getProperties().put("vector", vector.add(0, 0.5));
+            node.getProperties().put("vector", vector.add(0, 0.05));
 
             node.setTranslateX(node.getTranslateX() + vector.getX());
             node.setTranslateY(node.getTranslateY() + vector.getY());
@@ -302,6 +424,7 @@ public class WarsGame {
 
     private void playScoreAnimation(Node player, int score) {
         Text textScore = new Text(String.valueOf(score));
+        textScore.setFill(Color.WHITE);
         textScore.setTranslateX(player.getTranslateX());
         textScore.setTranslateY(player.getTranslateY());
 
@@ -319,7 +442,7 @@ public class WarsGame {
 
     private void moveLeft(int x) {
         // player.getTranslateX() could be substituted by player.getBoundsInParent().getMinX()
-        boolean reachedLeftLimit = player.getTranslateX() == 0;
+        boolean reachedLeftLimit = player.getTranslateX() <= 0;
 
         if (reachedLeftLimit) {
             return;
@@ -349,7 +472,7 @@ public class WarsGame {
     }
 
     private void moveUp(int y) {
-        boolean reachedTopLimit = player.getTranslateY() == 0;
+        boolean reachedTopLimit = player.getTranslateY() <= 0;
 
         if (reachedTopLimit) {
             return;
