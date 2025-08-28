@@ -1,26 +1,29 @@
 package tutorial.tutorial.examples.geometrywars;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
+import javafx.animation.*;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventType;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.media.AudioClip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -30,6 +33,8 @@ import java.util.*;
 public class WarsGame {
 
     private IntegerProperty score = new SimpleIntegerProperty();
+    private BooleanProperty laserAlive = new SimpleBooleanProperty(false);
+    private Rectangle laserBar = new Rectangle(0, 20);
 
     private Random random = new Random();
 
@@ -65,6 +70,10 @@ public class WarsGame {
 
     private AudioClip soundShoot, soundPower, soundExplosion, soundLaserReady, soundLaserShoot;
 
+    private final long[] frameTimes = new long[100];
+    private int frameTimeIndex = 0 ;
+    private boolean arrayFilled = false ;
+
     // uiRoot
     protected void initUI() {
         // add background
@@ -89,6 +98,34 @@ public class WarsGame {
         scoreText.setFill(Color.WHITE);
 
         gameRoot.getChildren().add(scoreText);
+
+        // set up laser text
+        Text laserText = new Text("SPACE");
+        laserText.setFont(Font.font(18));
+        laserText.visibleProperty().bind(laserBar.widthProperty().isEqualTo(100.0 , 0.01));
+        laserText.visibleProperty().addListener((obs, old, newVal) -> {
+            if (newVal) {
+                soundLaserReady.play();
+            }
+        });
+
+        laserBar.setFill(Color.YELLOWGREEN);
+
+        StackPane stack = new StackPane();
+        stack.setTranslateX(50);
+        stack.setTranslateY(50);
+
+        stack.setAlignment(Pos.CENTER);
+
+        stack.getChildren().addAll(laserBar, laserText);
+
+        gameRoot.getChildren().add(stack);
+
+        fpsText.setX(50);
+        fpsText.setY(100);
+        fpsText.setFill(Color.WHITE);
+
+        gameRoot.getChildren().add(fpsText);
 
         // set up keys and mouse events on the scene
         scene.setOnKeyPressed(event -> {
@@ -152,14 +189,73 @@ public class WarsGame {
             canShoot = true;
         }));
 
-        laserTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(5000), event -> {
-            canShootLaser = true;
-        }));
-
         shootBulletTimeLine.setCycleCount(Timeline.INDEFINITE);
         shootBulletTimeLine.play();
 
+        //
+        laserTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(10), event -> {
+            laserBar.widthProperty().set(laserBar.widthProperty().add(0.2).get());
+        }));
+
+        laserTimeLine.setCycleCount(500);
+        laserTimeLine.play();
+
+        //
+        traceTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(100), event -> {
+            spawnTrace();
+        }));
+
+        traceTimeLine.setCycleCount(Timeline.INDEFINITE);
+        traceTimeLine.play();
+
+        //
+        powerupSTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(5000), event -> {
+            canShoot = true;
+        }));
+
+
+        powerupSTimeLine.setCycleCount(50);
+        powerupSTimeLine.play();
+
+        AnimationTimer frameRateMeter = new AnimationTimer() {
+
+            @Override
+            public void handle(long now) {
+                long oldFrameTime = frameTimes[frameTimeIndex] ;
+                frameTimes[frameTimeIndex] = now ;
+                frameTimeIndex = (frameTimeIndex + 1) % frameTimes.length ;
+                if (frameTimeIndex == 0) {
+                    arrayFilled = true ;
+                }
+                if (arrayFilled) {
+                    long elapsedNanos = now - oldFrameTime ;
+                    long elapsedNanosPerFrame = elapsedNanos / frameTimes.length ;
+                    double frameRate = 1_000_000_000.0 / elapsedNanosPerFrame ;
+                    fpsText.setText(String.format("Current frame rate: %.3f", frameRate));
+                }
+            }
+        };
+
+        frameRateMeter.start();
+
         appRoot.getChildren().addAll(gameRoot);
+    }
+
+    private void spawnTrace() {
+        Rectangle trace = new  Rectangle(40, 40);
+        trace.setTranslateX(player.getTranslateX());
+        trace.setTranslateY(player.getTranslateY());
+
+        trace.setStroke(Color.BLUE);
+        trace.setFill(null);
+
+        gameRoot.getChildren().add(trace);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(1000), trace);
+        ft.setFromValue(1);
+        ft.setToValue(0);
+        ft.setOnFinished(event -> gameRoot.getChildren().remove(trace));
+        ft.play();
     }
 
     private void spawnPlayer() {
@@ -208,8 +304,6 @@ public class WarsGame {
     }
 
     private void spawnEnemy() {
-        if (enemies.size() > 7) return;
-
         Node enemy = new Circle(20, Color.RED);
         enemy.setTranslateX(random.nextInt(1280));
         enemy.setTranslateY(random.nextInt(720));
@@ -303,6 +397,9 @@ public class WarsGame {
         }
     }
 
+    private void spawnLaser() {
+    }
+
     protected void mainUpdate() {
         if (isKeyPressed(KeyCode.W)) {
             moveUp(-5);
@@ -321,7 +418,7 @@ public class WarsGame {
         }
 
         if (isKeyPressed(KeyCode.SPACE)) {
-//            spawnLaser();
+            spawnLaser();
         }
 
         if (isLeftMouseButtonPressed && canShoot) {
