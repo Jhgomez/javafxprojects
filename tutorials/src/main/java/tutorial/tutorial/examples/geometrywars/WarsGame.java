@@ -5,10 +5,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.Event;
-import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
@@ -44,9 +40,10 @@ public class WarsGame {
     private HashMap<KeyCode, Boolean> keys = new HashMap<>();
     private boolean isLeftMouseButtonPressed = false;
 
-    private ArrayList<Node> enemies = new ArrayList<>();
-    private ArrayList<Node> bullets = new ArrayList<>();
-    private ArrayList<Node> particles = new ArrayList<>();
+    private final ArrayList<Node> enemies = new ArrayList<>();
+    private final ArrayList<Node> bullets = new ArrayList<>();
+    private final ArrayList<Node> particles = new ArrayList<>();
+    private final List<Node> powerUps = new ArrayList<>();
 
     Timeline enemiesTimeline = new Timeline();
     Timeline shootBulletTimeLine = new Timeline();
@@ -212,7 +209,7 @@ public class WarsGame {
         traceTimeLine.play();
 
         //
-        powerupSTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(5000), event -> {
+        powerupSTimeLine.getKeyFrames().add(new KeyFrame(Duration.seconds(5), event -> {
             spawnPowerup();
         }));
 
@@ -247,6 +244,8 @@ public class WarsGame {
         Image powerup = new Image(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/textures/powerup_0" + random.nextInt(1,7) + ".png")).toExternalForm());
         ImageView powerupImageView = new ImageView(powerup);
 
+        powerupImageView.getProperties().put("alive", true);
+
         double width = powerup.getWidth() / 8;
 
         final double[] minX = {width};
@@ -255,7 +254,7 @@ public class WarsGame {
 
         Timeline powerUpTimeline = new Timeline();
 
-        powerUpTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(0.1),  event -> {
+        powerUpTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(60),  event -> {
             Rectangle2D rectangle = new Rectangle2D(minX[0], 0, width, powerup.getHeight());
             powerupImageView.setViewport(rectangle);
 
@@ -273,6 +272,31 @@ public class WarsGame {
         powerupImageView.setTranslateY(random.nextInt(scene.heightProperty().intValue()));
 
         gameRoot.getChildren().add(powerupImageView);
+        powerUps.add(powerupImageView);
+
+        powerupImageView.addEventHandler(GameEvent.DEATH, event -> {
+            powerUpTimeline.stop();
+
+            Node powerUp = (Node) event.getTarget();
+
+            soundPower.play();
+
+            ScaleTransition st = new ScaleTransition(Duration.millis(1000), powerUp);
+            st.setFromX(1);
+            st.setFromY(1);
+            st.setToX(0);
+            st.setToY(0);
+
+            st.setOnFinished(stEvent -> {
+                gameRoot.getChildren().remove(powerUp);
+            });
+
+            st.play();
+
+            playScoreAnimation(powerUp, 2000);
+
+            event.consume();
+        });
     }
 
     private void spawnTrace() {
@@ -401,6 +425,14 @@ public class WarsGame {
         bullets.add(bullet);
         gameRoot.getChildren().add(bullet);
 
+        bullet.addEventHandler(GameEvent.DEATH, event -> {
+            event.callback.run();
+
+            Node deadBullet = (Node) event.getTarget();
+
+            gameRoot.getChildren().remove(deadBullet);
+        });
+
 //        bullet.toBack();
 
         soundShoot.play();
@@ -461,6 +493,17 @@ public class WarsGame {
         }
 
         // we update(remove) enemies here so it has the same response time as the player
+        for (Node powerUp : powerUps) {
+            if (player.getBoundsInParent().intersects(powerUp.getBoundsInParent())) {
+                powerUp.getProperties().put("alive", false);
+//                score.set(score.get() - 1000);
+                powerUp.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+
+//                player.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+            }
+        }
+
+        // we update(remove) enemies here so it has the same response time as the player
         for (Node enemy : enemies) {
             if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
@@ -495,11 +538,13 @@ public class WarsGame {
 
         List<Node> bulletsToDelete = bullets.stream().filter(bullet -> !(Boolean)bullet.getProperties().get("alive")).toList();
         List<Node> enemiesToDelete = enemies.stream().filter(enemy -> !(Boolean)enemy.getProperties().get("alive")).toList();
+        List<Node> powerUpsToDelete = powerUps.stream().filter(p -> !(Boolean)p.getProperties().get("alive")).toList();
 
         enemies.removeAll(enemiesToDelete);
         bullets.removeAll(bulletsToDelete);
+        powerUps.removeAll(powerUpsToDelete);
 
-        gameRoot.getChildren().removeAll(bulletsToDelete);
+//        gameRoot.getChildren().removeAll(bulletsToDelete);
 //        gameRoot.getChildren().removeAll(enemiesToDelete);
 //        enemies.removeIf(enemiesToDelete::contains);
 //        bullets.removeIf(bulletsToDelete::contains);
