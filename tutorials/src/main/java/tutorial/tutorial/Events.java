@@ -22,6 +22,9 @@ import javafx.stage.Stage;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Taken from this documentation https://docs.oracle.com/javase/8/javafx/events-tutorial/handlers.htm
+ */
 public class Events {
 
     public void displayScreen(Runnable runnable) {

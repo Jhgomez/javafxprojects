@@ -14,6 +14,8 @@ class GameEvent extends Event {
 
     public static final EventType<GameEvent> DEATH = new EventType<>(GameEvent.ANY, "DEATH");
 
+    public static final EventType<GameEvent> LASER_DEATH = new EventType<>(GameEvent.ANY, "LASER_DEATH");
+
     public GameEvent(EventType<GameEvent> eventType, Runnable callback) {
         super(eventType);
 
