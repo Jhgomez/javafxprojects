@@ -572,6 +572,11 @@ public class WarsGame {
 
                 player.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
             }
+
+            if (laser != null && laser.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
+                enemy.getProperties().put("alive", false);
+                enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+            }
         }
 
         // we update(remove) bullets here so it has the same response time as the player
