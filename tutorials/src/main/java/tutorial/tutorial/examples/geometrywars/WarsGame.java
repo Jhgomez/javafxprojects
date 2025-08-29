@@ -331,6 +331,9 @@ public class WarsGame {
         player.addEventHandler(GameEvent.DEATH, event -> {
             event.callback.run();
 
+            gameRoot.getChildren().remove(laser);
+            laser = null;
+
             // `target` is the node that was assigned this handler, in this case it is "enemy", we could also get a
             // `source` which should be the Pane this node is living in
             Node player = (Node) event.getTarget();
@@ -387,6 +390,19 @@ public class WarsGame {
             // we consume the event so it doesn't bubble to other nodes in the buildEventDispatchChain
             event.consume();
         });
+
+        enemy.addEventHandler(GameEvent.LASER_DEATH, event -> {
+            event.callback.run();
+
+            // `target` is the node that was assigned this handler, in this case it is "enemy", we could also get a
+            // `source` which should be the Pane this node is living in
+            Node deadEnemy = (Node) event.getTarget();
+
+            playLaserDeathAnimation(deadEnemy);
+
+            // we consume the event so it doesn't bubble to other nodes in the buildEventDispatchChain
+            event.consume();
+        });
     }
 
     private void updateEnemiesPosition() {
@@ -419,7 +435,7 @@ public class WarsGame {
         // We create the bullet with the right angle using just the vector position
         Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsOriginToMousePositionVector.getX(), playerCenterY + bulletsOriginToMousePositionVector.getY());
         bullet.setStroke(Color.WHITE);
-        bullet.setStrokeWidth(1);
+        bullet.setStrokeWidth(2.5);
         bullet.getStrokeDashArray().addAll(3d);
         bullet.setStrokeDashOffset(1);
 
@@ -463,6 +479,7 @@ public class WarsGame {
 
             if (reachedBottomLimit || reachedLeftLimit || reachedTopLimit || reachedRightLimit) {
                 node.getProperties().put("alive", false);
+                node.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
             }
         }
     }
@@ -551,10 +568,7 @@ public class WarsGame {
 
             if (laser != null && laser.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
-                enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {
-                    playScoreAnimation(enemy, 100);
-                    playDeathAnimation(enemy);
-                }));
+                enemy.fireEvent(new GameEvent(GameEvent.LASER_DEATH, () -> {}));
             }
         }
 
@@ -644,6 +658,20 @@ public class WarsGame {
                 appRoot.getChildren().add(particle);
             }
         }
+    }
+
+    private void playLaserDeathAnimation(Node enemy) {
+        playScoreAnimation(enemy, 100);
+
+        ScaleTransition st = new ScaleTransition(Duration.seconds(.66), enemy);
+        st.setFromY(1);
+        st.setToY(0);
+
+        st.setOnFinished(event -> {
+            gameRoot.getChildren().remove(enemy);
+        });
+
+        st.play();
     }
 
     private void updateParticles() {
