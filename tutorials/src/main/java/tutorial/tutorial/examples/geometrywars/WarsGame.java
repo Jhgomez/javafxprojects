@@ -11,9 +11,12 @@ import javafx.event.Event;
 import javafx.event.EventType;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
@@ -210,11 +213,10 @@ public class WarsGame {
 
         //
         powerupSTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(5000), event -> {
-            canShoot = true;
+            spawnPowerup();
         }));
 
-
-        powerupSTimeLine.setCycleCount(50);
+        powerupSTimeLine.setCycleCount(Timeline.INDEFINITE);
         powerupSTimeLine.play();
 
         AnimationTimer frameRateMeter = new AnimationTimer() {
@@ -239,6 +241,38 @@ public class WarsGame {
         frameRateMeter.start();
 
         appRoot.getChildren().addAll(gameRoot);
+    }
+
+    private void spawnPowerup() {
+        Image powerup = new Image(Objects.requireNonNull(getClass().getResource("/tutorial/tutorial/assets/textures/powerup_0" + random.nextInt(1,7) + ".png")).toExternalForm());
+        ImageView powerupImageView = new ImageView(powerup);
+
+        double width = powerup.getWidth() / 8;
+
+        final double[] minX = {width};
+
+        powerupImageView.setViewport(new Rectangle2D(0, 0, width, powerup.getHeight()));
+
+        Timeline powerUpTimeline = new Timeline();
+
+        powerUpTimeline.getKeyFrames().add(new KeyFrame(Duration.seconds(0.1),  event -> {
+            Rectangle2D rectangle = new Rectangle2D(minX[0], 0, width, powerup.getHeight());
+            powerupImageView.setViewport(rectangle);
+
+            if (minX[0] + width >= powerup.getWidth()) {
+                minX[0] = 0;
+            } else {
+                minX[0] +=  width;
+            }
+        }));
+
+        powerUpTimeline.setCycleCount(Timeline.INDEFINITE);
+        powerUpTimeline.play();
+
+        powerupImageView.setTranslateX(random.nextInt(scene.widthProperty().intValue()));
+        powerupImageView.setTranslateY(random.nextInt(scene.heightProperty().intValue()));
+
+        gameRoot.getChildren().add(powerupImageView);
     }
 
     private void spawnTrace() {
@@ -481,7 +515,7 @@ public class WarsGame {
 
     private void playDeathAnimation(Node enemy) {
         // we don't do all angles to avoid loading too many particles
-        for (int i = 0; i < 360; i = i + 16) {
+        for (int i = 0; i < 360; i = i + random.nextInt(17, 22)) {
             for (int j = 0; j <= 4; j++) {
                 Circle particle = new Circle(2, Color.RED);
                 particle.setTranslateX(Math.cos(i) * (j * 4 + 2) + enemy.getTranslateX());
