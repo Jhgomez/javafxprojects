@@ -6,6 +6,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
@@ -24,6 +25,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -32,7 +34,7 @@ import java.util.*;
 public class WarsGame {
 
     private IntegerProperty score = new SimpleIntegerProperty();
-    private BooleanProperty laserAlive = new SimpleBooleanProperty(false);
+//    private BooleanProperty laserAlive = new SimpleBooleanProperty(false);
     private Rectangle laserBar = new Rectangle(0, 20);
 
     private Random random = new Random();
@@ -65,6 +67,8 @@ public class WarsGame {
 
     private double mouseXPosition;
     private double mouseYPosition;
+
+    private Line laser;
 
     private Text fpsText = new Text();
 
@@ -102,9 +106,9 @@ public class WarsGame {
         // set up laser text
         Text laserText = new Text("SPACE");
         laserText.setFont(Font.font(18));
-        laserText.visibleProperty().bind(laserBar.widthProperty().isEqualTo(100.0 , 0.01));
+        laserText.visibleProperty().bind(laserBar.widthProperty().greaterThanOrEqualTo(100.0));
         laserText.visibleProperty().addListener((obs, old, newVal) -> {
-            if (newVal) {
+            if (newVal.booleanValue()) {
                 soundLaserReady.play();
             }
         });
@@ -192,12 +196,14 @@ public class WarsGame {
         shootBulletTimeLine.setCycleCount(Timeline.INDEFINITE);
         shootBulletTimeLine.play();
 
-        //
+        // this runs every 5 seconds basically, since 10 milliseconds by 500 repetitions is 5000ms == 5s
         laserTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(10), event -> {
-            laserBar.widthProperty().set(laserBar.widthProperty().add(0.2).get());
+            if (laserText.visibleProperty().not().get()) {
+                laserBar.widthProperty().set(laserBar.widthProperty().add(0.2).get());
+            }
         }));
 
-        laserTimeLine.setCycleCount(500);
+        laserTimeLine.setCycleCount(Timeline.INDEFINITE);
         laserTimeLine.play();
 
         //
@@ -464,6 +470,60 @@ public class WarsGame {
     }
 
     private void spawnLaser() {
+        // only true after bar has grown to 100 or greater and as commented above it only happens every 5 seconds aprox
+        if (laserBar.widthProperty().greaterThanOrEqualTo(100.0).not().get() || laser != null) return;
+
+        double halfWidth = + player.getBoundsInParent().getWidth() / 2;
+
+        double centerX = player.getTranslateX() + halfWidth;
+        double centerY = player.getTranslateY() + halfWidth;
+
+        laser = new Line(
+                0,
+                0,
+                0,
+                -(centerY + scene.widthProperty().get())
+        );
+
+        laser.setTranslateX(centerX);
+        laser.setTranslateY(centerY);
+
+        laser.setStrokeWidth(2);
+        laser.setStroke(Color.YELLOW);
+
+        gameRoot.getChildren().add(laser);
+
+        Timeline rotateTranslate = new Timeline();
+
+        int[] degree = {1};
+
+        Rotate rotation = new Rotate();
+
+        laser.getTransforms().add(rotation);
+
+        laser.setRotationAxis(new Point3D(player.getTranslateX() + halfWidth, player.getTranslateY() + halfWidth, player.getTranslateZ()));
+        rotateTranslate.getKeyFrames().add(new KeyFrame(Duration.millis(2.78), event -> {
+            laser.setTranslateX(player.getTranslateX() + halfWidth);
+            laser.setTranslateY(player.getTranslateY() + halfWidth);
+
+            rotation.angleProperty().set(degree[0]);
+
+            degree[0]++;
+
+        }));
+
+        rotateTranslate.setOnFinished(event -> {
+            gameRoot.getChildren().remove(laser);
+            laser = null;
+
+            laserBar.widthProperty().set(0);
+        });
+
+        rotateTranslate.setCycleCount(360);
+
+        rotateTranslate.play();
+
+        soundLaserShoot.play();
     }
 
     protected void mainUpdate() {
