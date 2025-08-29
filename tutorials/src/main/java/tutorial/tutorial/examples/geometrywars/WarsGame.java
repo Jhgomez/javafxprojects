@@ -1,9 +1,7 @@
 package tutorial.tutorial.examples.geometrywars;
 
 import javafx.animation.*;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
@@ -47,7 +45,7 @@ public class WarsGame {
     private final ArrayList<Node> particles = new ArrayList<>();
     private final List<Node> powerUps = new ArrayList<>();
 
-    Timeline enemiesTimeline = new Timeline();
+    Timeline spanwEnemyTimeline = new Timeline();
     Timeline shootBulletTimeLine = new Timeline();
     Timeline powerupSTimeLine = new Timeline();
     Timeline laserTimeLine = new Timeline();
@@ -181,12 +179,12 @@ public class WarsGame {
         spawnPlayer();
 
         // start a thread that will create enemies every second
-        enemiesTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(1000), event -> {
+        spanwEnemyTimeline.getKeyFrames().add(new KeyFrame(Duration.millis(1000), event -> {
             spawnEnemy();
         }));
 
-        enemiesTimeline.setCycleCount(Timeline.INDEFINITE);
-        enemiesTimeline.play();
+        spanwEnemyTimeline.setCycleCount(Timeline.INDEFINITE);
+        spanwEnemyTimeline.play();
 
         // start a thread that lets shoot only every 0.25 seconds
         shootBulletTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(250), event -> {
@@ -391,7 +389,7 @@ public class WarsGame {
         });
     }
 
-    private void updateEnemies() {
+    private void updateEnemiesPosition() {
         // This is the player point so we can direct the enemies node to this coordinate
         Point2D playerVelocity = new Point2D(player.getTranslateX(), player.getTranslateY());
         Point2D enemyToPlayerVector;
@@ -444,7 +442,7 @@ public class WarsGame {
         soundShoot.play();
     }
 
-    private void updateBullets() {
+    private void updateBulletsPosition() {
         for (Node node : bullets) {
             Point2D bulletVector = (Point2D) node.getProperties().get("vector");
 
@@ -526,43 +524,21 @@ public class WarsGame {
         soundLaserShoot.play();
     }
 
-    protected void mainUpdate() {
-        if (isKeyPressed(KeyCode.W)) {
-            moveUp(-5);
-        }
-
-        if (isKeyPressed(KeyCode.A)) {
-            moveLeft(-5);
-        }
-
-        if (isKeyPressed(KeyCode.S)) {
-            moveDown(5);
-        }
-
-        if (isKeyPressed(KeyCode.D)) {
-            moveRight(5);
-        }
-
-        if (isKeyPressed(KeyCode.SPACE)) {
-            spawnLaser();
-        }
-
-        if (isLeftMouseButtonPressed && canShoot) {
-            canShoot = false;
-            spawnBullet();
-        }
-
+    protected void powerUpsUpdate() {
         // we update(remove) enemies here so it has the same response time as the player
         for (Node powerUp : powerUps) {
             if (player.getBoundsInParent().intersects(powerUp.getBoundsInParent())) {
                 powerUp.getProperties().put("alive", false);
 //                score.set(score.get() - 1000);
                 powerUp.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
-
-//                player.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
             }
         }
 
+        List<Node> powerUpsToDelete = powerUps.stream().filter(p -> !(Boolean)p.getProperties().get("alive")).toList();
+        powerUps.removeAll(powerUpsToDelete);
+    }
+
+    protected void enemiesUpdate() {
         // we update(remove) enemies here so it has the same response time as the player
         for (Node enemy : enemies) {
             if (player.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
@@ -575,7 +551,10 @@ public class WarsGame {
 
             if (laser != null && laser.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
                 enemy.getProperties().put("alive", false);
-                enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+                enemy.fireEvent(new GameEvent(GameEvent.DEATH, () -> {
+                    playScoreAnimation(enemy, 100);
+                    playDeathAnimation(enemy);
+                }));
             }
         }
 
@@ -603,11 +582,9 @@ public class WarsGame {
 
         List<Node> bulletsToDelete = bullets.stream().filter(bullet -> !(Boolean)bullet.getProperties().get("alive")).toList();
         List<Node> enemiesToDelete = enemies.stream().filter(enemy -> !(Boolean)enemy.getProperties().get("alive")).toList();
-        List<Node> powerUpsToDelete = powerUps.stream().filter(p -> !(Boolean)p.getProperties().get("alive")).toList();
 
         enemies.removeAll(enemiesToDelete);
         bullets.removeAll(bulletsToDelete);
-        powerUps.removeAll(powerUpsToDelete);
 
 //        gameRoot.getChildren().removeAll(bulletsToDelete);
 //        gameRoot.getChildren().removeAll(enemiesToDelete);
@@ -621,6 +598,33 @@ public class WarsGame {
 //        for (Node enemy : enemiesToDelete) {
 //            gameRoot.getChildren().remove(enemy);
 //        }
+    }
+
+    private void playerUpdate() {
+        if (isKeyPressed(KeyCode.W)) {
+            moveUp(-5);
+        }
+
+        if (isKeyPressed(KeyCode.A)) {
+            moveLeft(-5);
+        }
+
+        if (isKeyPressed(KeyCode.S)) {
+            moveDown(5);
+        }
+
+        if (isKeyPressed(KeyCode.D)) {
+            moveRight(5);
+        }
+
+        if (isKeyPressed(KeyCode.SPACE)) {
+            spawnLaser();
+        }
+
+        if (isLeftMouseButtonPressed && canShoot) {
+            canShoot = false;
+            spawnBullet();
+        }
     }
 
     private void playDeathAnimation(Node enemy) {
@@ -744,26 +748,40 @@ public class WarsGame {
         // we could have managed all items in one thread but this we we leverage concurrency and make each type of element
         // move as much concurrently as possible
 
-        // thread updating player position, dead bullets and dead enemies
-        Timeline mainTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
-            mainUpdate();
+        // thread updating powerups
+        Timeline powerTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
+            powerUpsUpdate();
         }));
-        mainTimeLine.setCycleCount(Timeline.INDEFINITE);
-        mainTimeLine.play();
+        powerTimeLine.setCycleCount(Timeline.INDEFINITE);
+        powerTimeLine.play();
 
-        // thread updating enemies position
+        // thread updating nodes(player, bullets) that collision with enemies
         Timeline enemiesTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
-            updateEnemies();
+            enemiesUpdate();
         }));
         enemiesTimeLine.setCycleCount(Timeline.INDEFINITE);
         enemiesTimeLine.play();
 
-        // thread updating bullets position
-        Timeline bulletsTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
-            updateBullets();
+        // thread updating player position
+        Timeline playerTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
+            playerUpdate();
         }));
-        bulletsTimeLine.setCycleCount(Timeline.INDEFINITE);
-        bulletsTimeLine.play();
+        playerTimeLine.setCycleCount(Timeline.INDEFINITE);
+        playerTimeLine.play();
+
+        // thread updating enemies position
+        Timeline enemiesPositionTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
+            updateEnemiesPosition();
+        }));
+        enemiesPositionTimeLine.setCycleCount(Timeline.INDEFINITE);
+        enemiesPositionTimeLine.play();
+
+        // thread updating bullets position
+        Timeline bulletsPositionTimeLine =  new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
+            updateBulletsPosition();
+        }));
+        bulletsPositionTimeLine.setCycleCount(Timeline.INDEFINITE);
+        bulletsPositionTimeLine.play();
 
         Timeline particlesTimeLine = new Timeline(new KeyFrame(Duration.millis(slider.getValue()*5), e -> {
             updateParticles();
@@ -772,29 +790,45 @@ public class WarsGame {
         particlesTimeLine.play();
 
         slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            // reconfigure powerups timer
+            powerTimeLine.stop();
+            powerTimeLine.getKeyFrames().clear();
+            powerTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
+                powerUpsUpdate();
+            }));
+            powerTimeLine.play();
+
+            // reconfigure player timer
+            playerTimeLine.stop();
+            playerTimeLine.getKeyFrames().clear();
+            playerTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
+                playerUpdate();
+            }));
+            playerTimeLine.play();
+
             // reconfigure enemies timer
+            enemiesPositionTimeLine.stop();
+            enemiesPositionTimeLine.getKeyFrames().clear();
+            enemiesPositionTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
+                updateEnemiesPosition();
+            }));
+            enemiesPositionTimeLine.play();
+
+            // reconfigure bullets timer
+            bulletsPositionTimeLine.stop();
+            bulletsPositionTimeLine.getKeyFrames().clear();
+            bulletsPositionTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
+                updateBulletsPosition();
+            }));
+            bulletsPositionTimeLine.play();
+
+            // reconfigure main timer
             enemiesTimeLine.stop();
             enemiesTimeLine.getKeyFrames().clear();
             enemiesTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
-                updateEnemies();
+                enemiesUpdate();
             }));
             enemiesTimeLine.play();
-
-            // reconfigure bullets timer
-            bulletsTimeLine.stop();
-            bulletsTimeLine.getKeyFrames().clear();
-            bulletsTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
-                updateBullets();
-            }));
-            bulletsTimeLine.play();
-
-            // reconfigure main timer
-            mainTimeLine.stop();
-            mainTimeLine.getKeyFrames().clear();
-            mainTimeLine.getKeyFrames().add(new KeyFrame(Duration.millis(newValue.doubleValue() * 5), e -> {
-                mainUpdate();
-            }));
-            mainTimeLine.play();
 
             // reconfigure particles timer
             particlesTimeLine.stop();
@@ -810,13 +844,18 @@ public class WarsGame {
         appRoot.getChildren().add(slider);
 
         stage.setOnCloseRequest(e -> {
-            mainTimeLine.stop();
-            bulletsTimeLine.stop();
             enemiesTimeLine.stop();
+            bulletsPositionTimeLine.stop();
+            enemiesPositionTimeLine.stop();
             particlesTimeLine.stop();
+            powerTimeLine.stop();
+            playerTimeLine.stop();
 
-            enemiesTimeline.stop();
+            spanwEnemyTimeline.stop();
             shootBulletTimeLine.stop();
+            powerupSTimeLine.stop();
+            laserTimeLine.stop();
+            traceTimeLine.stop();
 
             runnable.run();
         });
