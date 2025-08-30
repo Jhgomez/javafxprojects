@@ -315,7 +315,23 @@ public class WarsGame {
         player.setTranslateX(640);
         player.setTranslateY(360);
 
-        gameRoot.getChildren().add(player);
+        Line y1 = new Line(640 +20, 360+20, 640+20, 0);
+        Line y2 = new Line(640+20, 360+20, 640+20, 1000);
+        Line x1 = new Line(640+20, 360+20, 1200, 360+20);
+        Line x2 = new Line(0, 360+20, 640+20, 360+20);
+        x1.setStroke(Color.RED);
+        x2.setStroke(Color.RED);
+        y1.setStroke(Color.RED);
+        y2.setStroke(Color.RED);
+
+        gameRoot.getChildren()
+                .addAll(
+                        player,
+                        x1,
+                        x2,
+                        y2,
+                        y1
+                );
 
         player.addEventHandler(GameEvent.DEATH, event -> {
             event.callback.run();
@@ -419,7 +435,9 @@ public class WarsGame {
                 .multiply(10);
 
         // We create the bullet with the right angle using just the vector position
-        Line bullet = new Line(playerCenterX, playerCenterY, playerCenterX + bulletsOriginToMousePositionVector.getX(), playerCenterY + bulletsOriginToMousePositionVector.getY());
+        Line bullet = new Line(0, 0, bulletsOriginToMousePositionVector.getX(), bulletsOriginToMousePositionVector.getY());
+        bullet.setTranslateX(playerCenterX);
+        bullet.setTranslateY(playerCenterY);
         bullet.setStroke(Color.WHITE);
         bullet.setStrokeWidth(2.5);
         bullet.getStrokeDashArray().addAll(3d);
@@ -575,7 +593,9 @@ public class WarsGame {
                         playDeathAnimation(enemy);
                     }));
 
-                    bullet.fireEvent(new GameEvent(GameEvent.DEATH, () -> {}));
+                    bullet.fireEvent(new GameEvent(GameEvent.DEATH, () -> {
+                        playBulletDeathAnimation(bullet);
+                    }));
                 }
             }
         }
@@ -598,6 +618,53 @@ public class WarsGame {
 //        for (Node enemy : enemiesToDelete) {
 //            gameRoot.getChildren().remove(enemy);
 //        }
+    }
+
+    private void playBulletDeathAnimation(Node bullet) {
+        Point2D vector = (Point2D)bullet.getProperties().get("vector");
+
+        double angle = vector.angle(1, 0);
+
+        angle = vector.getY() <= 0 ? angle : 360 - angle;
+
+        double radians = Math.toRadians(angle);
+
+        double particleX = Math.cos(radians);
+        double particleY = Math.sin(radians);
+
+        for (int radius = 1; radius <= random.nextInt(7, 15); radius++) {
+            double xPos = particleX * radius;
+            double yPos = -particleY * radius;
+
+            if (angle >= 0 && angle <= 90 ) {
+                xPos += random.nextInt(5, 11);
+                yPos -= random.nextInt(5, 11);
+            }
+
+
+            if (angle > 90 && angle <= 180 ) {
+                xPos -= random.nextInt(5, 11);
+                yPos -= random.nextInt(5, 11);
+            }
+
+            if (angle > 180 && angle <= 270 ) {
+                xPos -= random.nextInt(5, 11);
+            }
+
+            Rectangle particle = new Rectangle(xPos, yPos, random.nextInt(1,4), random.nextInt(1,4));
+            particle.setFill(Color.GREEN);
+
+            particle.setTranslateX(bullet.getTranslateX());
+            particle.setTranslateY(bullet.getTranslateY());
+
+            Point2D vectorExplosion = new Point2D(random.nextDouble() - 0.4, random.nextDouble() - 0.6).multiply(2);
+
+            particle.getProperties().put("vector", vectorExplosion);
+            particle.getProperties().put("alive", true);
+
+            particles.add(particle);
+            gameRoot.getChildren().add(particle);
+        }
     }
 
     private void playerUpdate() {
@@ -630,10 +697,11 @@ public class WarsGame {
     private void playDeathAnimation(Node enemy) {
         // we don't do all angles to avoid loading too many particles
         for (int i = 0; i < 360; i = i + random.nextInt(17, 22)) {
-            for (int j = 0; j <= 4; j++) {
-                Circle particle = new Circle(2, Color.RED);
-                particle.setTranslateX(Math.cos(i) * (j * 4 + 2) + enemy.getTranslateX());
-                particle.setTranslateY(Math.sin(i) * (j * 4 + 2) + enemy.getTranslateY());
+            for (int j = 0; j <= random.nextInt(2,5); j++) {
+                double angle = Math.toRadians(i);
+                Circle particle = new Circle(random.nextInt(1,3), Color.RED);
+                particle.setTranslateX(Math.cos(angle) * (j * 4 + 2) + enemy.getTranslateX());
+                particle.setTranslateY(Math.sin(angle) * (j * 4 + 2) + enemy.getTranslateY());
 
                 Point2D vector = new Point2D(random.nextDouble() - 0.5, random.nextDouble() - 0.8).multiply(2);
 
@@ -641,7 +709,7 @@ public class WarsGame {
                 particle.getProperties().put("vector", vector);
 
                 particles.add(particle);
-                appRoot.getChildren().add(particle);
+                gameRoot.getChildren().add(particle);
             }
         }
     }
@@ -676,7 +744,7 @@ public class WarsGame {
         // but I will remove it here
         List<Node> particlesToRemove = particles.stream().filter(p -> !(Boolean)p.getProperties().get("alive")).toList();
         particles.removeAll(particlesToRemove);
-        appRoot.getChildren().removeAll(particlesToRemove);
+        gameRoot.getChildren().removeAll(particlesToRemove);
     }
 
     private void playScoreAnimation(Node player, int score) {
