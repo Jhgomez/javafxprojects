@@ -4,7 +4,6 @@ module tutorial.tutorial {
     requires javafx.media;
     requires java.desktop;
 
-
     opens tutorial.tutorial to javafx.fxml;
     exports tutorial.tutorial;
 //    exports tutorial.tutorial.examples.vector;
