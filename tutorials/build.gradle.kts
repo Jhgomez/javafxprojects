@@ -11,16 +11,10 @@ repositories {
     mavenCentral()
 }
 
-val junitVersion = "5.10.2"
-
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
-}
-
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
 }
 
 application {
@@ -29,7 +23,7 @@ application {
 }
 
 javafx {
-    version = "23"
+    version = "25"
     modules = listOf("javafx.controls", "javafx.fxml", "javafx.media")
 }
 
