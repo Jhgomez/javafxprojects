@@ -4,8 +4,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -69,11 +67,12 @@ public class Pacman {
     private Pane appRoot = new Pane();
     private Pane gameRoot = new Pane();
 
-    private Node player;
+    private Node player, enemy1;
 
     private Action action = Action.NONE;
     private Action prevAction = Action.NONE;
 
+    private Action randomAIAction = Action.NONE;
     // uiRoot
     protected void initUI() throws IOException {
         InputStream leveUrl = Objects.requireNonNull(getClass().getResourceAsStream("/tutorial/tutorial/pacman_levels.txt"));
@@ -125,7 +124,7 @@ public class Pacman {
     }
 
     private void initEnemies() {
-        Rectangle enemy1 = new Rectangle(30, 30, Color.RED);
+        enemy1 = new Rectangle(30, 30, Color.RED);
         enemy1.setTranslateX(45);
         enemy1.setTranslateY(45);
 
@@ -162,6 +161,30 @@ public class Pacman {
         }
     }
 
+    private void updateRandomAI() {
+        if (randomAIAction == Action.NONE) {
+            return;
+        }
+
+        double x = enemy1.getTranslateX();
+        double y = enemy1.getTranslateY();
+
+        enemy1.setTranslateX(x + randomAIAction.dx);
+        enemy1.setTranslateY(y + randomAIAction.dy);
+
+        boolean collision = walls.stream().anyMatch(wall -> enemy1.getBoundsInParent().intersects(wall.getBoundsInParent()));
+
+        if (collision) {
+            enemy1.setTranslateX(x);
+            enemy1.setTranslateY(y);
+
+            randomAIAction = Action.values()[random.nextInt(5)];
+
+            while (randomAIAction == Action.NONE) {
+                randomAIAction = Action.values()[random.nextInt(5)];
+            }
+        }
+    }
 
     public void displayScreen(Runnable runnable) {
         // 600 because level is 21x21 tiles, 40 is the size of each tile
@@ -205,9 +228,36 @@ public class Pacman {
 
         timer.play();
 
+        Timeline randomAITimer =  new Timeline(new KeyFrame(Duration.millis(10), e -> {
+            updateRandomAI();
+        }));
+
+        randomAITimer.setCycleCount(Timeline.INDEFINITE);
+
+        randomAITimer.play();
+
+        Timeline randomAIAction =  new Timeline(new KeyFrame(Duration.millis(1000), e -> {
+            updateRandomAction();
+        }));
+
+        randomAIAction.setCycleCount(Timeline.INDEFINITE);
+
+        randomAIAction.play();
+
         stage.setOnCloseRequest(e -> {
             timer.stop();
+            randomAITimer.stop();
+            randomAIAction.stop();
+
             runnable.run();
         });
+    }
+
+    private void updateRandomAction() {
+        randomAIAction = Action.values()[random.nextInt(5)];
+
+        while (randomAIAction == Action.NONE) {
+            randomAIAction = Action.values()[random.nextInt(5)];
+        }
     }
 }
