@@ -4,8 +4,10 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -13,7 +15,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.awt.geom.Point2D;
 import java.io.*;
 import java.util.*;
 
@@ -64,8 +65,10 @@ public class Pacman {
 
             List<AStarNode> path = new ArrayList<>();
 
+            var startId = startY * 100 + startX;
+
             AStarNode current = new AStarNode(
-                    startY * 100 + startX,
+                    startId,
                     startX,
                     startY,
                     0,
@@ -74,13 +77,20 @@ public class Pacman {
             );
 
             while (current != null) {
-                visited.put(current.id, current);
+                if (visited.containsKey(current.id)) {
+                    current = succerors.poll();
+                    continue;
+                }
 
                 if (current.x == targetX && current.y == targetY) {
+                    visited.put(current.id, current);
+
                     return current;
                 }
 
-                generateSuccesors(succerors, current);
+                generateSuccesors(succerors, current, visited);
+
+                visited.put(current.id, current);
 
                 current = succerors.poll();
             }
@@ -88,7 +98,7 @@ public class Pacman {
             return null;
         }
 
-        private void generateSuccesors(Queue<AStarNode> succerors, AStarNode current) {
+        private void generateSuccesors(Queue<AStarNode> succerors, AStarNode current, HashMap<Integer, AStarNode> visited) {
             var movementLevel = current.movementLevel + 1;
 
             // we don't allow more than 63 movements, that should not be possible as our grid is 21x21
@@ -99,12 +109,12 @@ public class Pacman {
             var rightId = current.y * 100 + (current.x + 1);
             var rightHeuristic = aiGrid.get(rightId);
 
-            if (!rightHeuristic.isWall) {
+            if (!rightHeuristic.isWall && !visited.containsKey(rightId)) {
                 var right = new AStarNode(
                         rightId,
                         current.x + 1,
                         current.y,
-                        rightHeuristic.hCost + movementLevel,
+                        current.cost + rightHeuristic.hCost,
                         movementLevel,
                         current
                 );
@@ -115,12 +125,12 @@ public class Pacman {
             var leftId = current.y * 100 + (current.x - 1);
             var leftHeuristic = aiGrid.get(leftId);
 
-            if (!leftHeuristic.isWall) {
+            if (!leftHeuristic.isWall && !visited.containsKey(leftId)) {
                 var left = new AStarNode(
                         leftId,
                         current.x - 1,
                         current.y,
-                        leftHeuristic.hCost + movementLevel,
+                        current.cost + leftHeuristic.hCost,
                         movementLevel,
                         current
                 );
@@ -131,12 +141,12 @@ public class Pacman {
             var topId = (current.y - 1) * 100 + current.x;
             var topHeuristic = aiGrid.get(topId);
 
-            if (!topHeuristic.isWall) {
+            if (!topHeuristic.isWall && !visited.containsKey(topId)) {
                 var top = new AStarNode(
                         topId,
                         current.x,
                         current.y - 1,
-                        topHeuristic.hCost + movementLevel,
+                        current.cost + topHeuristic.hCost,
                         movementLevel,
                         current
                 );
@@ -145,14 +155,14 @@ public class Pacman {
             }
 
             var bottomId = (current.y + 1) * 100 + current.x;
-            var bottomHeuristic = aiGrid.get(topId);
+            var bottomHeuristic = aiGrid.get(bottomId);
 
-            if (!bottomHeuristic.isWall) {
+            if (!bottomHeuristic.isWall && !visited.containsKey(bottomId)) {
                 var bottom = new AStarNode(
                         bottomId,
                         current.x,
                         current.y + 1,
-                        bottomHeuristic.hCost + movementLevel,
+                        current.cost + bottomHeuristic.hCost,
                         movementLevel,
                         current
                 );
@@ -185,7 +195,7 @@ public class Pacman {
 
         @Override
         public int compareTo(AStarNode o) {
-            return o.cost - this.cost;
+            return this.cost + this.movementLevel - o.cost - o.movementLevel;
         }
     }
 
@@ -360,11 +370,11 @@ public class Pacman {
         // the way around as you'd normally think and this is because this will help us save some computation as the
         // nodes have a reference to its parent this will help us walk the tree more easily, is like bringing the enemy
         // to the player through the shortest path
-        int targetX = Math.abs(Math.max(21, (int)(enemy2.getTranslateX()/40)));
-        int targetY = Math.abs(Math.max(21, (int)(enemy2.getTranslateY()/40)));
+        int targetX = Math.abs(Math.min(21, (int)(enemy2.getTranslateX()/40)));
+        int targetY = Math.abs(Math.min(21, (int)(enemy2.getTranslateY()/40)));
 
-        int startX = Math.abs(Math.max(21, (int)(player.getTranslateX()/40)));
-        int startY = Math.abs(Math.max(21, (int)(player.getTranslateY()/40)));
+        int startX = Math.abs(Math.min(21, (int)(player.getTranslateX()/40)));
+        int startY = Math.abs(Math.min(21, (int)(player.getTranslateY()/40)));
 
         // basically the heuristic has to be computed all the time to be able to find the shortest path
         for (int i = 0; i < 21; i++) {
@@ -445,6 +455,37 @@ public class Pacman {
         randomAIAction.setCycleCount(Timeline.INDEFINITE);
 
         randomAIAction.play();
+
+        var findPath = new Button("Find Path");
+        findPath.setOnAction(_ -> {
+            shouldWalkPath = true;
+            updateSmartAI();
+
+            IO.println("Finding Path");
+        });
+
+        var walkPath = new Button("Walk Path");
+        walkPath.setOnAction(_ -> {
+            if (path == null) throw new IllegalStateException("Path is null");
+
+            AStarNode current = path;
+
+            IO.println(current);
+
+            while (current.parent != null) {
+                moveSmartAI(new Point2D(current.x*40 + 5, current.y*40 + 5));
+                current = current.parent;
+            }
+        });
+
+
+
+        findPath.setLayoutX(appRoot.widthProperty().get());
+        walkPath.setLayoutX(appRoot.widthProperty().get());
+        walkPath.setLayoutY(30);
+
+        gameRoot.getChildren().addAll(findPath, walkPath);
+
 
         stage.setOnCloseRequest(e -> {
             timer.stop();
