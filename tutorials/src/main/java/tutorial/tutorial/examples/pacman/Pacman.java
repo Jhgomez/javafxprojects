@@ -345,6 +345,49 @@ public class Pacman {
         }
     }
 
+    private void moveSmartAI(Point2D position) {
+        TranslateTransition tt = new TranslateTransition(Duration.millis(16.66 * 8 * 2), enemy2);
+        tt.setToX(position.getX());
+        tt.setToY(position.getY());
+        tt.setInterpolator(Interpolator.LINEAR);
+        tt.play();
+    }
+
+    private void updateSmartAI() {
+        if (!shouldWalkPath) return;
+
+        // this indicates the position(x, y) in the grid/map where the enemy/target is. Enemy will be the target and not
+        // the way around as you'd normally think and this is because this will help us save some computation as the
+        // nodes have a reference to its parent this will help us walk the tree more easily, is like bringing the enemy
+        // to the player through the shortest path
+        int targetX = Math.abs(Math.max(21, (int)(enemy2.getTranslateX()/40)));
+        int targetY = Math.abs(Math.max(21, (int)(enemy2.getTranslateY()/40)));
+
+        int startX = Math.abs(Math.max(21, (int)(player.getTranslateX()/40)));
+        int startY = Math.abs(Math.max(21, (int)(player.getTranslateY()/40)));
+
+        // basically the heuristic has to be computed all the time to be able to find the shortest path
+        for (int i = 0; i < 21; i++) {
+            int idBase = i * 100;
+            for (int j = 0; j < 21; j++) {
+                Heuristic heuristic = aiGrid.get(idBase + j);
+
+                if (heuristic == null) continue;
+                if (heuristic.isWall) continue;
+
+                // calculate the current heuristic, it will be the distance between the player and the target, meaning
+                // we are using "manhattan" distance
+                heuristic.hCost = Math.abs(j - targetX) + Math.abs(i - targetY);
+            }
+        }
+
+        path = ai.getPath(aiGrid, startX, startY, targetX, targetY);
+
+        if (path == null) throw new IllegalStateException("AI didn't find a path");
+
+        shouldWalkPath = false;
+    }
+
     public void displayScreen(Runnable runnable) {
         // 600 because level is 21x21 tiles, 40 is the size of each tile
         int size = 21*BLOCK_SIZE;
