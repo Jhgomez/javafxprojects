@@ -110,7 +110,7 @@ public class Pacman {
             var rightHeuristic = aiGrid.get(rightId);
 
             // right heuristic could be null because of the tunnel
-            if (rightHeuristic == null && !rightHeuristic.isWall && !visited.containsKey(rightId)) {
+            if (rightHeuristic != null && !rightHeuristic.isWall && !visited.containsKey(rightId)) {
                 var right = new AStarNode(
                         rightId,
                         current.x + 1,
