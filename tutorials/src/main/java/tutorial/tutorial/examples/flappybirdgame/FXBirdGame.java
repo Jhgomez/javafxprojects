@@ -1,6 +1,5 @@
 package tutorial.tutorial.examples.flappybirdgame;
 
-import com.almasb.fxgl.texture.Texture;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.beans.property.BooleanProperty;
@@ -41,7 +40,6 @@ public class FXBirdGame {
 
     private Node player;
 
-    private Texture textureBird;
     private AudioClip audioShoot;
 
     // uiRoot

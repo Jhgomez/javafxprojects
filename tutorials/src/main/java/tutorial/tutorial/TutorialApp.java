@@ -11,6 +11,7 @@ import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import tutorial.tutorial.examples.flappybirdgame.FXBirdGame;
 import tutorial.tutorial.examples.geometrywars.WarsGame;
+import tutorial.tutorial.examples.pacman.Pacman;
 import tutorial.tutorial.examples.platformgame.PlatformGame;
 import tutorial.tutorial.examples.vector.Vector;
 import tutorial.tutorial.media.PlayVideo;
@@ -36,6 +37,7 @@ public class TutorialApp extends Application {
         Button platformGame = new Button("Platform Game");
         Button birdGame = new Button("Bird Game");
         Button warGame = new Button("War Game");
+        Button pacman = new Button("Pacman");
 
         Runnable runnable = stage::show;
 
@@ -119,6 +121,11 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        pacman.setOnAction(e -> {
+            new Pacman().displayScreen(runnable);
+            stage.hide();
+        });
+
         VBox.setVgrow(_2DShapes, Priority.ALWAYS);
         _2DShapes.setMaxHeight(Double.MAX_VALUE);
 
@@ -139,7 +146,8 @@ public class TutorialApp extends Application {
                 vector,
                 platformGame,
                 birdGame,
-                warGame
+                warGame,
+                pacman
         );
 
         root.setAlignment(Pos.CENTER);

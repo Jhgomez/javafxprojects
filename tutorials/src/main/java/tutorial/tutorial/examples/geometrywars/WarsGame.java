@@ -641,7 +641,6 @@ public class WarsGame {
                 yPos -= random.nextInt(5, 11);
             }
 
-
             if (angle > 90 && angle <= 180 ) {
                 xPos -= random.nextInt(5, 11);
                 yPos -= random.nextInt(5, 11);
