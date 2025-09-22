@@ -109,7 +109,8 @@ public class Pacman {
             var rightId = current.y * 100 + (current.x + 1);
             var rightHeuristic = aiGrid.get(rightId);
 
-            if (!rightHeuristic.isWall && !visited.containsKey(rightId)) {
+            // right heuristic could be null because of the tunnel
+            if (rightHeuristic == null && !rightHeuristic.isWall && !visited.containsKey(rightId)) {
                 var right = new AStarNode(
                         rightId,
                         current.x + 1,
@@ -125,7 +126,8 @@ public class Pacman {
             var leftId = current.y * 100 + (current.x - 1);
             var leftHeuristic = aiGrid.get(leftId);
 
-            if (!leftHeuristic.isWall && !visited.containsKey(leftId)) {
+            // left heuristic could be null because of the tunnel
+            if (leftHeuristic != null && !leftHeuristic.isWall && !visited.containsKey(leftId)) {
                 var left = new AStarNode(
                         leftId,
                         current.x - 1,
@@ -468,14 +470,24 @@ public class Pacman {
         walkPath.setOnAction(_ -> {
             if (path == null) throw new IllegalStateException("Path is null");
 
-            AStarNode current = path;
+            var position = new Point2D(path.x*40 + 5, path.y*40 + 5);
 
-            IO.println(current);
+            TranslateTransition tt = new TranslateTransition(Duration.millis(16.66 * 8 * 2), enemy2);
+            tt.setToX(position.getX());
+            tt.setToY(position.getY());
+            tt.setInterpolator(Interpolator.LINEAR);
+            tt.setOnFinished(_ -> {
+                path = path.parent;
+                if (path != null) {
+                    var position2 = new Point2D(path.x*40 + 5, path.y*40 + 5);
 
-            while (current.parent != null) {
-                moveSmartAI(new Point2D(current.x*40 + 5, current.y*40 + 5));
-                current = current.parent;
-            }
+                    tt.setToX(position2.getX());
+                    tt.setToY(position2.getY());
+
+                    tt.play();
+                }
+            });
+            tt.play();
         });
 
 
