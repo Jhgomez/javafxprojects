@@ -1,6 +1,7 @@
 package tutorial.tutorial.examples.gamemenus;
 
 import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
 import javafx.concurrent.Service;
@@ -105,10 +106,47 @@ public class MortalKombatX implements GameMenu {
     }
 
     private static Node createRightContent() {
+        String title = "Check For Updates";
+        HBox letters = new HBox(0);
+        letters.setAlignment(Pos.CENTER);
+
+        for (int i = 0; i < title.length(); i++) {
+            Text letter = new Text(String.valueOf(title.charAt(i)));
+            letter.setFont(FONT);
+            letter.setFill(Color.WHITE);
+            letter.setOpacity(0);
+            letters.getChildren().add(letter);
+
+            FadeTransition ft = new FadeTransition(Duration.seconds(2), letter);
+            ft.setDelay( Duration.millis(50 * i ) );
+            ft.setToValue(1);
+            ft.setAutoReverse(true);
+            ft.setInterpolator(Interpolator.LINEAR);
+            ft.play();
+        }
     }
 
     private static Node createMiddleContent() {
-        return null;
+        String title = "MKX Menu App";
+        HBox letters = new HBox(0);
+        letters.setAlignment(Pos.CENTER);
+
+        for (int i = 0; i < title.length(); i++) {
+            Text letter = new Text(String.valueOf(title.charAt(i)));
+            letter.setFont(FONT);
+            letter.setFill(Color.WHITE);
+            letters.getChildren().add(letter);
+
+            TranslateTransition tt = new TranslateTransition(Duration.seconds(2), letter);
+            tt.setDelay( Duration.millis(50 * i ) );
+            tt.setToY(-25);
+            tt.setInterpolator(Interpolator.LINEAR);
+            tt.setAutoReverse(true);
+            tt.setCycleCount(TranslateTransition.INDEFINITE);
+            tt.play();
+        }
+
+        return letters;
     }
 
     private static Node createLeftContent() {
