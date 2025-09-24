@@ -1,19 +1,21 @@
 package tutorial.tutorial.examples.gamemenus;
 
-import javafx.animation.FadeTransition;
-import javafx.animation.Interpolator;
-import javafx.animation.ParallelTransition;
-import javafx.animation.TranslateTransition;
+import javafx.animation.*;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -28,11 +30,17 @@ public class MortalKombatX implements GameMenu {
 
     private static final Font FONT = Font.font("", FontWeight.BOLD, 18);
 
+    private static Pane root;
     private static VBox menuBox;;
-    private static int messages;
+    private static int messages = 1;
+    private final Scene containerScene;
     private int currentItem = 0;
 
-    private static ScheduledExecutorService bgThread = Executors.newSingleThreadScheduledExecutor();
+    static SequentialTransition st = new SequentialTransition();
+
+    public MortalKombatX(Scene containerScene) {
+        this.containerScene = containerScene;
+    }
 
     private static class ContentFrame extends StackPane {
         public ContentFrame(Node content) {
@@ -48,61 +56,62 @@ public class MortalKombatX implements GameMenu {
     }
 
     private static class MenuItem extends HBox {
+        private TriCircle c1 = new TriCircle(), c2 = new TriCircle();
+        private Text text;
+        private Runnable script;
 
         public MenuItem(String title) {
+            super(15);
+            setAlignment(Pos.CENTER);
+
+            text = new Text(title);
+            text.setFont(FONT);
+            text.setEffect(new GaussianBlur(2));
+
+            getChildren().addAll(c1, text, c2);
+            setActive(false);
+            setOnActivate(() -> System.out.printf("%s activated\n", title));
         }
 
-        public void setOnActivate(Runnable callback) {
+        public void setOnActivate(Runnable r) {
+            script = r;
         }
 
         public void setActive(boolean b) {
+            c1.setVisible(b);
+            c2.setVisible(b);
+            text.setFill(b ? Color.WHITE : Color.GREY);
+        }
+
+        public void activate() {
+            if (script != null) {
+                script.run();
+            }
         }
     }
 
     private static class TriCircle extends Parent {
+        public TriCircle() {
+            Shape shape1 = Shape.subtract(new Circle(5), new Circle(2));
+            shape1.setFill(Color.WHITE);
 
+            Shape shape2 = Shape.subtract(new Circle(5), new Circle(2));
+            shape2.setFill(Color.WHITE);
+            shape2.setTranslateX(5);
+
+            Shape shape3 = Shape.subtract(new Circle(5), new Circle(2));
+            shape3.setFill(Color.WHITE);
+            shape3.setTranslateX(2.5);
+            shape3.setTranslateY(-55);
+
+            getChildren().addAll(shape1, shape2);
+
+            setEffect(new GaussianBlur(2));
+        }
     }
 
-    private static void initMenu() {
-        Pane root = new Pane();
-        root.setPrefSize(900, 600);
-        root.setStyle("-fx-background-color: #000000");
-
-        ContentFrame frame1 = new ContentFrame(createLeftContent());
-        ContentFrame frame2 = new ContentFrame(createMiddleContent());
-        ContentFrame frame3 = new ContentFrame(createRightContent());
-        
-        HBox hbox = new HBox(15, frame1, frame2, frame3);
-        hbox.setTranslateX(120);
-        hbox.setTranslateY(50);
-        
-        MenuItem itemExit = new MenuItem("EXIT");
-        itemExit.setOnActivate(GameMenus::clearScreen);
-        
-        menuBox = new VBox(
-                10, 
-                new MenuItem("ONE PLAYER"),
-                new MenuItem("TWO PLAYER"),
-                new MenuItem("ONLINE"),
-                new MenuItem("FACTION"),
-                new MenuItem("KRYPT"),
-                new MenuItem("OPTIONS"),
-                new MenuItem("EXTRAS"),
-                itemExit
-        );
-        
-        menuBox.setAlignment(Pos.TOP_CENTER);
-        menuBox.setTranslateX(360);
-        menuBox.setTranslateY(360);
-
-        getMenuItem(0).setActive(true);
-
-        root.getChildren().addAll(hbox, menuBox);
-
-        return root;
-    }
-
-    private static MenuItem getMenuItem(int i) {
+    private static MenuItem getMenuItem(int index) {
+        return (MenuItem) menuBox.getChildren().get(index);
     }
 
     private static Node createRightContent() {
@@ -124,6 +133,8 @@ public class MortalKombatX implements GameMenu {
             ft.setInterpolator(Interpolator.LINEAR);
             ft.play();
         }
+
+        return letters;
     }
 
     private static Node createMiddleContent() {
@@ -151,53 +162,82 @@ public class MortalKombatX implements GameMenu {
 
     private static Node createLeftContent() {
         final Text inbox = new Text("You have " + messages + " new message(-s)");
+        inbox.setFill(Color.WHITE);
+        inbox.setTranslateY(-120);
+        inbox.setOpacity(0);
 
-        var service = new Service<String>() {
+        TranslateTransition tt2 = new TranslateTransition(Duration.seconds(0.4), inbox);
+        tt2.setToY(0);
 
-            @Override
-            protected Task<String> createTask() {
-                return null;
-            }
-        };
+        FadeTransition ft2 = new FadeTransition(Duration.seconds(0.4), inbox);
+        ft2.setToValue(1);
 
-        // using a JavaFx concurrent Task object will avoid us the need to
-        // explicitly use the "Platform.runLater" method inside the runnable
-        bgThread.scheduleAtFixedRate(new Task<Void>() {
-            @Override
-            protected Void call() {
-                TranslateTransition tt = new TranslateTransition(Duration.seconds(0.5), inbox);
-                tt.setToY(150);
+        ParallelTransition pt2 = new ParallelTransition(tt2, ft2);
 
-                FadeTransition ft = new FadeTransition(Duration.seconds(0.5), inbox);
-                ft.setToValue(0);
+        PauseTransition pauset = new PauseTransition(Duration.seconds(3));
 
-                ParallelTransition pt = new ParallelTransition(tt, ft);
-                pt.setOnFinished(_ -> {
-                    inbox.setTranslateY(-150);
-                    inbox.setText("You have " + messages + " new message(-s");
 
-                    TranslateTransition tt2 = new TranslateTransition(Duration.seconds(0.5), inbox);
-                    tt.setToY(0);
 
-                    FadeTransition ft2 = new FadeTransition(Duration.seconds(0.5), inbox);
-                    ft.setToValue(1);
+        TranslateTransition tt = new TranslateTransition(Duration.seconds(0.4), inbox);
+        tt.setToY(120);
 
-                    ParallelTransition pt2 = new ParallelTransition(tt2, ft2);
-                    pt2.play();
-                });
+        FadeTransition ft = new FadeTransition(Duration.seconds(0.4), inbox);
+        ft.setToValue(0);
 
-                pt.play();
+        ParallelTransition pt3 = new ParallelTransition(tt, ft);
 
-                return null;
-            }
-        }, 2, 5, TimeUnit.SECONDS);
+
+        TranslateTransition tt1 = new TranslateTransition(Duration.millis(10), inbox);
+        tt1.setToY(-120);
+
+        st.getChildren().addAll(pt2, pauset, pt3, tt1);
+        st.setCycleCount(SequentialTransition.INDEFINITE);
 
         return inbox;
     }
 
     @Override
-    public Region getMenu(Scene scene) {
-        scene.setOnKeyPressed(event -> {
+    public Region getMenu() {
+        root = new Pane();
+        root.setPrefSize(900, 600);
+        root.setStyle("-fx-background-color: #000000");
+
+        ContentFrame frame1 = new ContentFrame(createLeftContent());
+        ContentFrame frame2 = new ContentFrame(createMiddleContent());
+        ContentFrame frame3 = new ContentFrame(createRightContent());
+
+        HBox hbox = new HBox(15, frame1, frame2, frame3);
+        hbox.setTranslateX(120);
+        hbox.setTranslateY(50);
+
+        MenuItem itemExit = new MenuItem("EXIT");
+        itemExit.setOnActivate(() -> {
+            clearResources();
+            GameMenus.clearScreen();
+        });
+
+
+        menuBox = new VBox(
+                10,
+                new MenuItem("ONE PLAYER"),
+                new MenuItem("TWO PLAYER"),
+                new MenuItem("ONLINE"),
+                new MenuItem("FACTION"),
+                new MenuItem("KRYPT"),
+                new MenuItem("OPTIONS"),
+                new MenuItem("EXTRAS"),
+                itemExit
+        );
+
+        menuBox.setAlignment(Pos.TOP_CENTER);
+        menuBox.setTranslateX(360);
+        menuBox.setTranslateY(360);
+
+        getMenuItem(0).setActive(true);
+
+        root.getChildren().addAll(hbox, menuBox);
+
+        containerScene.getFocusOwner().setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.UP) {
                 if (currentItem > 0) {
                     getMenuItem(currentItem).setActive(false);
@@ -215,15 +255,25 @@ public class MortalKombatX implements GameMenu {
             if (event.getCode() == KeyCode.ENTER) {
                 getMenuItem(currentItem).activate();
             }
+
+            IO.println(event.getCode());
         });
 
-        initMenu();
-        return null;
+//        containerScene.focusOwnerProperty().addListener(listener);
+
+        st.play();
+
+        return root;
     }
 
     @Override
     public void clearResources() {
-        bgThread.shutdownNow();
-        menuBox = null;
+        st.stop();
+        st.getChildren().clear();
+//        containerScene.focusOwnerProperty().removeListener(listener);
+        containerScene.getFocusOwner().setOnKeyPressed(null);
+
+        root.getChildren().clear();
+        root = null;
     }
 }
