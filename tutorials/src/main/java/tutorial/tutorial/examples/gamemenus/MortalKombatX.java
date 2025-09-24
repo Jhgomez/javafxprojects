@@ -1,10 +1,6 @@
 package tutorial.tutorial.examples.gamemenus;
 
 import javafx.animation.*;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -20,11 +16,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class MortalKombatX implements GameMenu {
 
@@ -102,9 +93,9 @@ public class MortalKombatX implements GameMenu {
             Shape shape3 = Shape.subtract(new Circle(5), new Circle(2));
             shape3.setFill(Color.WHITE);
             shape3.setTranslateX(2.5);
-            shape3.setTranslateY(-55);
+            shape3.setTranslateY(-5);
 
-            getChildren().addAll(shape1, shape2);
+            getChildren().addAll(shape1, shape2, shape3);
 
             setEffect(new GaussianBlur(2));
         }
@@ -130,7 +121,8 @@ public class MortalKombatX implements GameMenu {
             ft.setDelay( Duration.millis(50 * i ) );
             ft.setToValue(1);
             ft.setAutoReverse(true);
-            ft.setInterpolator(Interpolator.LINEAR);
+            ft.setInterpolator(Interpolator.EASE_IN);
+            ft.setCycleCount(FadeTransition.INDEFINITE);
             ft.play();
         }
 
@@ -197,9 +189,9 @@ public class MortalKombatX implements GameMenu {
     }
 
     @Override
-    public Region getMenu() {
+    public Pane getMenu() {
         root = new Pane();
-        root.setPrefSize(900, 600);
+        root.setPrefSize(900, 700);
         root.setStyle("-fx-background-color: #000000");
 
         ContentFrame frame1 = new ContentFrame(createLeftContent());
@@ -255,13 +247,15 @@ public class MortalKombatX implements GameMenu {
             if (event.getCode() == KeyCode.ENTER) {
                 getMenuItem(currentItem).activate();
             }
-
-            IO.println(event.getCode());
         });
 
-//        containerScene.focusOwnerProperty().addListener(listener);
-
         st.play();
+
+        IO.println("1WP" + root.widthProperty().get());
+        IO.println("1HP" + root.heightProperty().get());
+
+        IO.println("1W" + root.getPrefWidth());
+        IO.println("1H" + root.getPrefHeight());
 
         return root;
     }
@@ -270,10 +264,7 @@ public class MortalKombatX implements GameMenu {
     public void clearResources() {
         st.stop();
         st.getChildren().clear();
-//        containerScene.focusOwnerProperty().removeListener(listener);
-        containerScene.getFocusOwner().setOnKeyPressed(null);
 
-        root.getChildren().clear();
-        root = null;
+        containerScene.getFocusOwner().setOnKeyPressed(null);
     }
 }
