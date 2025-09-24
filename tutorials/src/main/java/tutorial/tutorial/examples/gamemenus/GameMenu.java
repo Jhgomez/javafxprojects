@@ -1,10 +1,9 @@
 package tutorial.tutorial.examples.gamemenus;
 
-import javafx.scene.Scene;
-import javafx.scene.layout.Region;
+import javafx.scene.layout.Pane;
 
 public interface GameMenu {
-    Region getMenu(Scene scene);
+    Pane getMenu();
 
     void clearResources();
 }

@@ -1,6 +1,12 @@
 package tutorial.tutorial.examples.gamemenus;
 
-import javafx.animation.*;
+
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -21,9 +27,7 @@ public class MortalKombatX implements GameMenu {
 
     private static final Font FONT = Font.font("", FontWeight.BOLD, 18);
 
-    private static Pane root;
-    private static VBox menuBox;;
-    private static int messages = 1;
+    private static VBox menuBox;
     private final Scene containerScene;
     private int currentItem = 0;
 
@@ -47,8 +51,9 @@ public class MortalKombatX implements GameMenu {
     }
 
     private static class MenuItem extends HBox {
-        private TriCircle c1 = new TriCircle(), c2 = new TriCircle();
-        private Text text;
+        private final TriCircle c1 = new TriCircle();
+        private final TriCircle c2 = new TriCircle();
+        private final Text text;
         private Runnable script;
 
         public MenuItem(String title) {
@@ -153,6 +158,7 @@ public class MortalKombatX implements GameMenu {
     }
 
     private static Node createLeftContent() {
+        int messages = 1;
         final Text inbox = new Text("You have " + messages + " new message(-s)");
         inbox.setFill(Color.WHITE);
         inbox.setTranslateY(-120);
@@ -190,7 +196,7 @@ public class MortalKombatX implements GameMenu {
 
     @Override
     public Pane getMenu() {
-        root = new Pane();
+        Pane root = new Pane();
         root.setPrefSize(900, 700);
         root.setStyle("-fx-background-color: #000000");
 
@@ -250,12 +256,6 @@ public class MortalKombatX implements GameMenu {
         });
 
         st.play();
-
-        IO.println("1WP" + root.widthProperty().get());
-        IO.println("1HP" + root.heightProperty().get());
-
-        IO.println("1W" + root.getPrefWidth());
-        IO.println("1H" + root.getPrefHeight());
 
         return root;
     }
