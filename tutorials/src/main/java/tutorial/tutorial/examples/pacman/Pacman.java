@@ -47,8 +47,8 @@ public class Pacman {
 
     private List<String> levelData = new ArrayList<>();
     // represents the width and height of the level, width 21 tiles and height 21 tiles
-    // we will give this map to the AI that helps us manage the enemies
-    private final HashMap<Integer, Heuristic> aiGrid = new HashMap<>();
+    // we will give this map to the AI that helps us manage the enemies AI
+    private final HashMap<Short, GridCell> aiGrid = new HashMap<>();
     private final AStarLogic ai = new AStarLogic();
 
     // this class gives the path between AStarStart to AStarTarget
@@ -58,21 +58,23 @@ public class Pacman {
         /// player and the target is the enemy, do it this way will help us walk the tree while saving the computation of
         /// having to go up the tree again and walk it down again as this is what we would have to do if the enemy would be
         /// the start and the player the target
-        public AStarNode getPath(HashMap<Integer, Heuristic> heuristicMap, int startX, int startY, int targetX, int targetY) {
+        public AStarNode getPath(HashMap<Short, GridCell> grid, short startX, short startY, short targetX, short targetY) {
             Queue<AStarNode> succerors = new PriorityQueue<>();
 
-            HashMap<Integer, AStarNode> visited = new HashMap<>();
+            HashMap<Short, AStarNode> visited = new HashMap<>();
+//            HttpClient.newHttpClient();
+//            HttpURLConnection
+//            new URL()
+//            new Socket("localhost", 8080);
 
-            List<AStarNode> path = new ArrayList<>();
-
-            var startId = startY * 100 + startX;
+            var startId = (short)(startY * 100 + startX);
 
             AStarNode current = new AStarNode(
                     startId,
                     startX,
                     startY,
-                    0,
-                    0,
+                    (short) 0,
+                    (short) 0,
                     null
             );
 
@@ -85,10 +87,12 @@ public class Pacman {
                 if (current.x == targetX && current.y == targetY) {
                     visited.put(current.id, current);
 
+                    IO.println("visited nodes: " + visited.size());
+                    IO.println("succerors nodes: " + succerors.size());
                     return current;
                 }
 
-                generateSuccesors(succerors, current, visited);
+                generateSuccesors(succerors, visited, grid, current, targetX, targetY);
 
                 visited.put(current.id, current);
 
@@ -98,78 +102,93 @@ public class Pacman {
             return null;
         }
 
-        private void generateSuccesors(Queue<AStarNode> succerors, AStarNode current, HashMap<Integer, AStarNode> visited) {
-            var movementLevel = current.movementLevel + 1;
+        private void generateSuccesors(
+                Queue<AStarNode> succerorsCollector,
+                HashMap<Short, AStarNode> visited,
+                HashMap<Short, GridCell> aiGrid,
+                AStarNode current,
+                int targetX,
+                int targetY
+        ) {
+            var movementLevel = (short)(current.movementLevel + 1);
 
             // we don't allow more than 63 movements, that should not be possible as our grid is 21x21
             if (movementLevel >= 50) {
                 throw new IllegalStateException("Tree might be looping indefinitely");
             }
 
-            var rightId = current.y * 100 + (current.x + 1);
-            var rightHeuristic = aiGrid.get(rightId);
+            short rightId = (short) (current.y * 100 + (current.x + 1));
+            var rightCell = aiGrid.get(rightId);
 
-            // right heuristic could be null because of the tunnel
-            if (rightHeuristic != null && !rightHeuristic.isWall && !visited.containsKey(rightId)) {
+            // right cell could be null because of the tunnel
+            if (rightCell != null && !rightCell.isWall && !visited.containsKey(rightId)) {
+                var rightCellCost = (short)(Math.abs(current.x + 1 - targetX) + Math.abs(current.y - targetY));
+
                 var right = new AStarNode(
                         rightId,
-                        current.x + 1,
+                        (short) (current.x + 1),
                         current.y,
-                        current.cost + rightHeuristic.hCost,
+                        (short) (current.cost + rightCellCost),
                         movementLevel,
                         current
                 );
 
-                succerors.add(right);
+                succerorsCollector.add(right);
             }
 
-            var leftId = current.y * 100 + (current.x - 1);
-            var leftHeuristic = aiGrid.get(leftId);
+            var leftId = (short)(current.y * 100 + (current.x - 1));
+            var lefCell = aiGrid.get(leftId);
 
             // left heuristic could be null because of the tunnel
-            if (leftHeuristic != null && !leftHeuristic.isWall && !visited.containsKey(leftId)) {
+            if (lefCell != null && !lefCell.isWall && !visited.containsKey(leftId)) {
+                short leftCellCost = (short) (Math.abs(current.x - 1 - targetX) + Math.abs(current.y - targetY));
+
                 var left = new AStarNode(
                         leftId,
-                        current.x - 1,
+                        (short) (current.x - 1),
                         current.y,
-                        current.cost + leftHeuristic.hCost,
+                        (short) (current.cost + leftCellCost),
                         movementLevel,
                         current
                 );
 
-                succerors.add(left);
+                succerorsCollector.add(left);
             }
 
-            var topId = (current.y - 1) * 100 + current.x;
-            var topHeuristic = aiGrid.get(topId);
+            var topId = (short)((current.y - 1) * 100 + current.x);
+            var topCell = aiGrid.get(topId);
 
-            if (!topHeuristic.isWall && !visited.containsKey(topId)) {
+            if (!topCell.isWall && !visited.containsKey(topId)) {
+                var topCellCost = Math.abs(current.x - targetX) + Math.abs(current.y - 1 - targetY);
+
                 var top = new AStarNode(
                         topId,
                         current.x,
-                        current.y - 1,
-                        current.cost + topHeuristic.hCost,
+                        (short) (current.y - 1),
+                        (short) (current.cost + topCellCost),
                         movementLevel,
                         current
                 );
 
-                succerors.add(top);
+                succerorsCollector.add(top);
             }
 
-            var bottomId = (current.y + 1) * 100 + current.x;
-            var bottomHeuristic = aiGrid.get(bottomId);
+            var bottomId = (short)((current.y + 1) * 100 + current.x);
+            var bottomCell = aiGrid.get(bottomId);
 
-            if (!bottomHeuristic.isWall && !visited.containsKey(bottomId)) {
+            if (!bottomCell.isWall && !visited.containsKey(bottomId)) {
+                var bottomCellCost = Math.abs(current.x - targetX) + Math.abs(current.y + 1 - targetY);
+
                 var bottom = new AStarNode(
                         bottomId,
                         current.x,
-                        current.y + 1,
-                        current.cost + bottomHeuristic.hCost,
+                        (short) (current.y + 1),
+                        (short) (current.cost + bottomCellCost),
                         movementLevel,
                         current
                 );
 
-                succerors.add(bottom);
+                succerorsCollector.add(bottom);
             }
 
 
@@ -178,15 +197,15 @@ public class Pacman {
 
     // This class help us mark the AStart path start and AStart path target
     private static class AStarNode implements Comparable<AStarNode> {
-        int id, x, y, movementLevel;
+        short id, x, y, movementLevel;
 
         // in this A* algorithm we will use the heuristic(distance(x, y) from node to target) plus the number of movements
         // to calculate the cost of each node
-        int cost;
+        short cost;
 
         AStarNode parent;
 
-        public AStarNode(int id, int x, int y, int cost, int movementLevel, AStarNode parent) {
+        public AStarNode(short id, short x, short y, short cost, short movementLevel, AStarNode parent) {
             this.id = id;
             this.x = x;
             this.y = y;
@@ -195,6 +214,8 @@ public class Pacman {
             this.parent = parent;
         }
 
+        // this will make the priority queue to sort the nodes by "cost + movement(means quantity of movements)" which is exactly what an A* algorithm does
+        // note that in the properties they live separately so we can keep track of them
         @Override
         public int compareTo(AStarNode o) {
             return this.cost + this.movementLevel - o.cost - o.movementLevel;
@@ -204,14 +225,15 @@ public class Pacman {
     /// This class could have been created just as a map but to make it more readable we will make it an object
     /// and wrap it inside a map to be able to search in it easily and efficiently. This class basically represents
     /// a map of the world and just identifies the tiles/blocks in the world that are walls and also free space
-    private static class Heuristic {
-        int id;
+    /// int hCost; // heuristic will be "Manhattan distance"
+    private static class GridCell {
+        short id;
         boolean isWall;
-        int hCost; // heuristic will be "Manhattan distance"
+
 
         /// @param id       this id is calculated by the line and column values of the characters that draw the world
         /// @param isWall   when the map finds a '1' it represents a wall, and '0' represents space to move around
-        public Heuristic(int id, boolean isWall) {
+        public GridCell(short id, boolean isWall) {
             this.id = id;
             this.isWall = isWall;
         }
@@ -276,8 +298,8 @@ public class Pacman {
                 }
 
                 // we give the AI a model of the world
-                int id = levelIDBase + j;
-                aiGrid.put(id, new Heuristic(id, c == '1'));
+                short id = (short) (levelIDBase + j);
+                aiGrid.put(id, new GridCell(id, c == '1'));
             }
         }
     }
@@ -372,26 +394,26 @@ public class Pacman {
         // the way around as you'd normally think and this is because this will help us save some computation as the
         // nodes have a reference to its parent this will help us walk the tree more easily, is like bringing the enemy
         // to the player through the shortest path
-        int targetX = Math.abs(Math.min(21, (int)(enemy2.getTranslateX()/40)));
-        int targetY = Math.abs(Math.min(21, (int)(enemy2.getTranslateY()/40)));
+        var targetX = (short)(Math.abs(Math.min(21, (int)(enemy2.getTranslateX()/40))));
+        var targetY = (short)(Math.abs(Math.min(21, (int)(enemy2.getTranslateY()/40))));
 
-        int startX = Math.abs(Math.min(21, (int)(player.getTranslateX()/40)));
-        int startY = Math.abs(Math.min(21, (int)(player.getTranslateY()/40)));
+        var startX = (short)(Math.abs(Math.min(21, (int)(player.getTranslateX()/40))));
+        var startY = (short)(Math.abs(Math.min(21, (int)(player.getTranslateY()/40))));
 
-        // basically the heuristic has to be computed all the time to be able to find the shortest path
-        for (int i = 0; i < 21; i++) {
-            int idBase = i * 100;
-            for (int j = 0; j < 21; j++) {
-                Heuristic heuristic = aiGrid.get(idBase + j);
-
-                if (heuristic == null) continue;
-                if (heuristic.isWall) continue;
-
-                // calculate the current heuristic, it will be the distance between the player and the target, meaning
-                // we are using "manhattan" distance
-                heuristic.hCost = Math.abs(j - targetX) + Math.abs(i - targetY);
-            }
-        }
+//        // basically the heuristic has to be computed all the time to be able to find the shortest path
+//        for (int i = 0; i < 21; i++) {
+//            int idBase = i * 100;
+//            for (int j = 0; j < 21; j++) {
+//                Heuristic heuristic = aiGrid.get(idBase + j);
+//
+//                if (heuristic == null) continue;
+//                if (heuristic.isWall) continue;
+//
+//                // calculate the current heuristic, it will be the distance between the player and the target, meaning
+//                // we are using "manhattan" distance
+//                heuristic.hCost = Math.abs(j - targetX) + Math.abs(i - targetY);
+//            }
+//        }
 
         path = ai.getPath(aiGrid, startX, startY, targetX, targetY);
 
@@ -461,7 +483,11 @@ public class Pacman {
         var findPath = new Button("Find Path");
         findPath.setOnAction(_ -> {
             shouldWalkPath = true;
+
+            double start = System.currentTimeMillis();
             updateSmartAI();
+            double end = System.currentTimeMillis();
+            System.out.println("Time to find path: " + (end - start) + "ms");
 
             IO.println("Finding Path");
         });
