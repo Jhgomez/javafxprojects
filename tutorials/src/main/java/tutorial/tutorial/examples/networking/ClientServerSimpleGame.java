@@ -8,9 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-import tutorial.tutorial.examples.gamemenus.GameMenu;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -19,8 +17,6 @@ import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Flow;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 public class ClientServerSimpleGame {
@@ -28,8 +24,10 @@ public class ClientServerSimpleGame {
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private List<Node> gameNodes = new ArrayList<>();
+    private List<Runnable> clientClosingCallBacks = new ArrayList<>();
 
     private ServerSocket serverSocket;
+    Socket clientSocket;
 
     public void displayScreen(Runnable runnable) {
         Stage stage = new Stage();
@@ -77,15 +75,29 @@ public class ClientServerSimpleGame {
         stage.show();
 
         stage.setOnCloseRequest(e -> {
+            clientClosingCallBacks.forEach(Runnable::run);
+
             if (serverSocket != null) {
                 try {
                     serverSocket.close();
                 } catch (IOException ex) {
+                    executor.close();
                     runnable.run();
                     throw new RuntimeException(ex);
                 }
             }
 
+            if (clientSocket != null) {
+                try {
+                    clientSocket.close();
+                } catch (IOException ex) {
+                    executor.close();
+                    runnable.run();
+                    throw new RuntimeException(ex);
+                }
+            }
+
+            executor.close();
             runnable.run();
         });
     }
@@ -93,9 +105,77 @@ public class ClientServerSimpleGame {
     private HashMap<String, Function<Scene, Pane>> getScreens() {
         var map = new HashMap<String, Function<Scene, Pane>>();
 
-        map.put("Server Player", this::serverPlayer);
+        map.put("Server", this::serverPlayer);
+        map.put("Client", this::clientPlayer);
 
         return map;
+    }
+
+    private Pane clientPlayer(Scene scene) {
+        initClientSocket();
+
+        var player = new Player(2);
+
+        var pane = new Pane(player);
+        pane.setPrefSize(800, 600);
+        pane.setStyle("-fx-background-color: #123456");
+
+        gameNodes.add(player);
+
+        return pane;
+    }
+
+    private void initClientSocket() {
+        executor.execute(() -> {
+            try {
+                clientSocket = new Socket("localhost", 12346);
+
+                // Setting up input and output streams
+                var out = new PrintWriter(new BufferedOutputStream(clientSocket.getOutputStream()), true);
+                var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+                // Start a thread to handle incoming messages
+//                executor.execute(() -> {
+//                    try {
+//                        var message = "";
+//                        while ((message = in.readLine()) != null) {
+//                            System.out.println("\n- " + message);
+//                            System.out.print("> ");
+//                        }
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                });
+
+                try {
+                    var message = "";
+                    while ((message = in.readLine()) != null) {
+                        System.out.println("\n- " + message);
+                        System.out.print("> ");
+                    }
+                } catch (SocketException e) {
+                    IO.println("Client disconnected");
+                }catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+//                // Read messages from the console and send to the server
+//                Scanner scanner = new Scanner(System.in);
+//                String userInput = "";
+//                while (true) {
+////                System.out.print("Waiting for client input: ");
+//                    System.out.print("> ");
+//
+//                    userInput = scanner.nextLine();
+//
+//                    out.println(userInput);
+//
+////                System.out.println("Input sent to server: " + userInput);
+//                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private Pane serverPlayer(Scene scene) {
@@ -123,7 +203,7 @@ public class ClientServerSimpleGame {
 
         executor.execute(()-> {
 
-            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
 
 //                executor.execute(() -> {
 //                    var scanner = new Scanner(System.in);
@@ -152,15 +232,23 @@ public class ClientServerSimpleGame {
 //                });
 
                 while (!serverSocket.isClosed()) {
-                    Socket tempClient;
+                    Socket client;
                     try {
-                        tempClient = serverSocket.accept();
+                        client = serverSocket.accept();
                     } catch (SocketException e) {
+
                         IO.println("Server closed");
                         return;
                     }
 
-                    var client = tempClient;
+                    clientClosingCallBacks.add(() -> {
+                        try {
+                            client.close();
+                        } catch (IOException e) {
+                            System.err.println("Error closing client socket");
+                        }
+
+                    });
 
                     executor.submit(() -> {
                         try {
@@ -184,13 +272,18 @@ public class ClientServerSimpleGame {
 
                             var message = "";
 
-                            while ((message = in.readLine()) != null) {
+                            try {
+                                while ((message = in.readLine()) != null) {
 //                            System.out.println("Message received from client: " + message);
-                                System.out.println("\n- " + message);
-                                System.out.print("> ");
+                                    System.out.println("\n- " + message);
+                                    System.out.print("> ");
+                                }
+                            } catch (SocketException _) {
+                                // ignoring exception since this means the server is disconnected and all clients have
+                                // been, therefore, disconnected
                             }
 
-//                        System.out.println("Client disconnected");
+                        System.out.println("Client disconnected in server");
                             writters.remove(out);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
