@@ -6,6 +6,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
@@ -15,16 +16,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class ClientServerSimpleGame {
     private List<Node> nodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private List<Node> gameNodes = new ArrayList<>();
-    private List<Runnable> clientClosingCallBacks = new ArrayList<>();
+    private Map<Short, Node> players = new ConcurrentHashMap<>();
+    private final List<Runnable> clientClosingCallBacks = new ArrayList<>();
+    private final AtomicInteger idCounter = new AtomicInteger(0);
 
     private ServerSocket serverSocket;
     Socket clientSocket;
@@ -34,7 +36,7 @@ public class ClientServerSimpleGame {
         stage.setTitle("Networking");
 
         var group = new Group();
-        nodes = group.getChildren();
+        nodes = Collections.synchronizedList(group.getChildren());
 
         var scene = new Scene(group, 600, 400);
 
@@ -97,6 +99,8 @@ public class ClientServerSimpleGame {
                 }
             }
 
+            // closing executor waits until all task have finished, which is a good way to ensure
+            // all resources are cleared(means all sockets are closed)
             executor.close();
             runnable.run();
         });
@@ -114,13 +118,9 @@ public class ClientServerSimpleGame {
     private Pane clientPlayer(Scene scene) {
         initClientSocket();
 
-        var player = new Player(2);
-
-        var pane = new Pane(player);
+        var pane = new Pane();
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
-
-        gameNodes.add(player);
 
         return pane;
     }
@@ -181,20 +181,20 @@ public class ClientServerSimpleGame {
     private Pane serverPlayer(Scene scene) {
         initServerSocket();
 
-        var player = new Player(1);
+        var player = new Player((short) idCounter.getAndIncrement());
 
         var pane = new Pane(player);
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
 
-        gameNodes.add(player);
+        players.put(player.getPlayerId(), player);
 
         return pane;
     }
 
     private void initServerSocket() {
-        final List<PrintWriter> writters = new ArrayList<>();
-        final Deque<String> messagesToClients = new ArrayDeque<>();
+        final List<ObjectOutputStream> writters = new CopyOnWriteArrayList<>();
+        final Deque<Player> movedPlayers = new ArrayDeque<>();
         try {
             this.serverSocket = new ServerSocket( 12346);
         } catch (IOException e) {
@@ -236,7 +236,6 @@ public class ClientServerSimpleGame {
                     try {
                         client = serverSocket.accept();
                     } catch (SocketException e) {
-
                         IO.println("Server closed");
                         return;
                     }
@@ -247,45 +246,96 @@ public class ClientServerSimpleGame {
                         } catch (IOException e) {
                             System.err.println("Error closing client socket");
                         }
-
                     });
 
                     executor.submit(() -> {
                         try {
-                            var out = new PrintWriter(new BufferedOutputStream(client.getOutputStream()), true);
-                            writters.add(out);
+                            var out = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream()));
 
-                            var in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                            var in = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
 
 //                        System.out.println("Client connected");
 
-                            // broadcast virtual thread
+                            // virtual thread for creating players
                             executor.execute(() -> {
-                                while(!messagesToClients.isEmpty() && !writters.isEmpty()) {
-                                    var message = messagesToClients.poll();
+                                var player = new Player((short) idCounter.getAndIncrement());
 
-                                    for (var outWritter : writters) {
-                                        outWritter.println(message);
-                                    }
+                                try {
+                                    //sends a message and all current players to this client
+                                    out.writeObject("Player Created");
+                                    out.writeObject(players);
+
+                                    executor.execute(() -> {
+                                        writters.add(out);
+                                        players.put(player.getPlayerId(), player);
+
+                                        for (var writer : writters) {
+                                            try {
+                                                writer.writeObject(player);
+                                            } catch (IOException e) {
+                                                IO.println("Error sending newly added player");
+                                            }
+                                        }
+                                    });
+                                } catch (IOException e) {
+                                    IO.println("Error sending previous players to client");
                                 }
                             });
 
-                            var message = "";
-
                             try {
-                                while ((message = in.readLine()) != null) {
-//                            System.out.println("Message received from client: " + message);
-                                    System.out.println("\n- " + message);
-                                    System.out.print("> ");
+                                var request = in.readObject();
+                                while (request != null) {
+//                                    if (request instanceof Request r) {
+//
+//                                    }
+                                    switch (request) {
+                                        case Request r -> {
+                                            var requestedPlayer = players.get(r.id());
+
+                                            for (var key: r.codes()) {
+                                                if (key == KeyCode.W) {
+                                                    requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() - 5);
+                                                } else if (key == KeyCode.A) {
+                                                    requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() - 5);
+                                                } else if (key == KeyCode.S) {
+                                                    requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() + 5);
+                                                } else if (key == KeyCode.D) {
+                                                    requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() + 5);
+                                                }
+                                            }
+
+                                            var updatedPlayerInfo =
+                                                    new Update(r.id(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
+
+                                            for (var writer: writters) {
+                                                try {
+                                                    writer.writeObject(updatedPlayerInfo);
+                                                } catch (IOException e) {
+                                                    IO.println("Error sending updated player");
+                                                }
+                                            }
+                                        }
+                                        default -> throw new IllegalStateException("Unexpected value: " + request);
+                                    }
+                                    request = in.readObject();
                                 }
-                            } catch (SocketException _) {
+                            } catch (Exception e) {
                                 // ignoring exception since this means the server is disconnected and all clients have
                                 // been, therefore, disconnected
+                                System.out.println("Client disconnected from catch in server");
+                                writters.remove(out);
+                                throw new RuntimeException(e);
                             }
 
-                        System.out.println("Client disconnected in server");
+                            System.out.println("Client disconnected in server");
                             writters.remove(out);
                         } catch (IOException e) {
+                            try {
+                                client.close();
+                            } catch (IOException ex) {
+                                throw new RuntimeException(ex);
+                            }
+
                             throw new RuntimeException(e);
                         }
                     });
