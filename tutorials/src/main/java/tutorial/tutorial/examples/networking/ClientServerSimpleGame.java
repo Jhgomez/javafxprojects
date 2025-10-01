@@ -1,5 +1,6 @@
 package tutorial.tutorial.examples.networking;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Group;
@@ -8,7 +9,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -25,7 +28,7 @@ public class ClientServerSimpleGame {
     private List<Node> gameNodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private Map<Short, Node> players = new ConcurrentHashMap<>();
+    private ConcurrentMap<Short, Node> players = new ConcurrentHashMap<>();
     private final List<Runnable> clientClosingCallBacks = new ArrayList<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
@@ -120,8 +123,11 @@ public class ClientServerSimpleGame {
         initClientSocket();
 
         var pane = new Pane();
+
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
+
+        gameNodes = Collections.synchronizedList(pane.getChildren());
 
         return pane;
     }
@@ -132,7 +138,8 @@ public class ClientServerSimpleGame {
                 clientSocket = new Socket("localhost", 12346);
 
                 // Setting up input and output streams
-                var out = new PrintWriter(new BufferedOutputStream(clientSocket.getOutputStream()), true);
+                var out = new ObjectOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+                out.writeObject("Ok");
                 var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 // Start a thread to handle incoming messages
@@ -192,7 +199,6 @@ public class ClientServerSimpleGame {
         pane.setStyle("-fx-background-color: #123456");
 
         players.put(player.getPlayerId(), player);
-        gameNodes.add(player);
 
         return pane;
     }
@@ -207,10 +213,13 @@ public class ClientServerSimpleGame {
         }
 
         executor.execute(()-> {
+            try {
                 while (!serverSocket.isClosed()) {
+                    IO.println("server ready");
                     Socket client;
                     try {
                         client = serverSocket.accept();
+                        IO.println("client connected");
                     } catch (SocketException e) {
                         IO.println("Server closed");
                         return;
@@ -224,27 +233,32 @@ public class ClientServerSimpleGame {
                         }
                     });
 
-                    executor.submit(() -> {
+                    executor.execute(() -> {
                         try {
                             var out = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream()));
-
-                            var in = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
 
 //                        System.out.println("Client connected");
 
                             // virtual thread for creating players
+                            IO.println("Streams Created");
                             executor.execute(() -> {
                                 var player = new Player((short) idCounter.getAndIncrement());
+                                IO.println("new player");
 
                                 try {
                                     //sends a message and all current players to this client
-                                    out.writeObject("Player Created");
+//                                    out.writeObject("Player Created");
                                     out.writeObject(players);
+                                    IO.println("wrote prev players");
 
                                     executor.execute(() -> {
                                         writters.add(out);
                                         players.put(player.getPlayerId(), player);
-                                        gameNodes.add(player);
+
+                                        Platform.runLater(() -> {
+                                            gameNodes.add(player);
+                                            IO.println("added player to game nodes in parent");
+                                        });
 
                                         for (var writer : writters) {
                                             try {
@@ -256,10 +270,13 @@ public class ClientServerSimpleGame {
                                     });
                                 } catch (IOException e) {
                                     IO.println("Error sending previous players to client");
+                                    throw new RuntimeException(e);
                                 }
                             });
 
                             try {
+                                var in = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
+
                                 var request = in.readObject();
                                 while (request != null) {
 //                                    if (request instanceof Request r) {
@@ -292,6 +309,7 @@ public class ClientServerSimpleGame {
                                                 }
                                             }
                                         }
+                                        case String _ -> System.out.println("Client sent ok");
                                         default -> throw new IllegalStateException("Unexpected value: " + request);
                                     }
                                     request = in.readObject();
