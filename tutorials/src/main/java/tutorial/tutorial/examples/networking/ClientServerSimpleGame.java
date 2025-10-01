@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class ClientServerSimpleGame {
-    private List<Node> nodes;
+    private List<Node> groupNodes;
+    private List<Node> gameNodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private Map<Short, Node> players = new ConcurrentHashMap<>();
@@ -36,7 +37,7 @@ public class ClientServerSimpleGame {
         stage.setTitle("Networking");
 
         var group = new Group();
-        nodes = Collections.synchronizedList(group.getChildren());
+        groupNodes = group.getChildren();
 
         var scene = new Scene(group, 600, 400);
 
@@ -51,11 +52,11 @@ public class ClientServerSimpleGame {
         transformationsComboBox.valueProperty().addListener((observable, oldVal, newVal) -> {
 //            if (currentMenu != null) currentMenu.clearResources();
 
-            nodes.clear();
+            groupNodes.clear();
 
             if (transformations1.get(newVal) != null) {
                 Pane newNode = transformations1.get(newVal).apply(scene);
-                nodes.add(newNode);
+                groupNodes.add(newNode);
 
                 stage.setWidth(newNode.getPrefWidth());
                 stage.setHeight(newNode.getPrefHeight());
@@ -184,10 +185,14 @@ public class ClientServerSimpleGame {
         var player = new Player((short) idCounter.getAndIncrement());
 
         var pane = new Pane(player);
+
+        gameNodes = Collections.synchronizedList(pane.getChildren());
+
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
 
         players.put(player.getPlayerId(), player);
+        gameNodes.add(player);
 
         return pane;
     }
@@ -202,35 +207,6 @@ public class ClientServerSimpleGame {
         }
 
         executor.execute(()-> {
-
-            try {
-
-//                executor.execute(() -> {
-//                    var scanner = new Scanner(System.in);
-//
-//                    while (!server.isClosed()) {
-//                        System.out.print("> ");
-//
-//                        var userInput = scanner.nextLine();
-//                        messagesToClients.offer(userInput);
-//
-//                        // broadcast virtual thread
-//                        executor.execute(() -> {
-//                            while(!messagesToClients.isEmpty() && !writters.isEmpty()) {
-////            System.out.println(messagesToClients);
-//                                var message = messagesToClients.poll();
-////            System.out.println("polling message " + message);
-//
-//                                for (var out : writters) {
-//                                    out.println(message);
-////                System.out.println("Message sent to client ");
-//                                }
-//                            }
-//                        });
-//                    }
-//                    System.out.println("server is closed");
-//                });
-
                 while (!serverSocket.isClosed()) {
                     Socket client;
                     try {
@@ -268,6 +244,7 @@ public class ClientServerSimpleGame {
                                     executor.execute(() -> {
                                         writters.add(out);
                                         players.put(player.getPlayerId(), player);
+                                        gameNodes.add(player);
 
                                         for (var writer : writters) {
                                             try {
