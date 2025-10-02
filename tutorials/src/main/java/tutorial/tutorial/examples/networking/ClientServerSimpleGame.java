@@ -190,6 +190,13 @@ public class ClientServerSimpleGame {
 
                                 IO.println("Player " + 1 + " screen added single player Id " + p.getPlayerId() );
                             }
+                            case String s -> IO.println(s);
+                            case DeleteUpdate d -> {
+                                Platform.runLater(() -> {
+                                    gameNodes.remove(playerNodes.get(d.id()));
+                                    playerNodes.remove(d.id());
+                                });
+                            }
                             default -> IO.println("Couldn't read response or cast was not successful, waiting for next message");
                         }
 
@@ -398,13 +405,25 @@ public class ClientServerSimpleGame {
                                 // with sockets it is thrown when the connection is closed
                                 System.out.println("Client disconnected after catch in server");
                                 writters.remove(id);
+                                // inform all other writers a player has disconnected
+
+                                var deleteRequest = new DeleteUpdate(id);
+                                writters.forEach((playerId, writer) -> {
+                                    try {
+                                        writer.writeObject(deleteRequest);
+                                        writer.flush();
+                                    } catch (IOException ex) {
+                                        IO.println("Error sending delete request of " + id + " to player id " + playerId);
+                                    }
+                                });
 
                                 clientClosingCallBacks.get(id).run();
                                 clientClosingCallBacks.remove(id);
 
 
                                 Platform.runLater(() -> {
-                                    gameNodes.remove(playersFactory.get(id));
+                                    gameNodes.remove(playerNodes.get(id));
+                                    playerNodes.remove(id);
                                     playersFactory.remove(id);
                                 });
 
