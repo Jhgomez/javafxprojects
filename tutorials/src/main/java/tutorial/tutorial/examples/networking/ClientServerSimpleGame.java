@@ -29,7 +29,7 @@ public class ClientServerSimpleGame {
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private ConcurrentMap<Short, Node> players = new ConcurrentHashMap<>();
-    private final List<Runnable> clientClosingCallBacks = new ArrayList<>();
+    private final Map<Short, Runnable> clientClosingCallBacks = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
     private ServerSocket serverSocket;
@@ -81,7 +81,10 @@ public class ClientServerSimpleGame {
         stage.show();
 
         stage.setOnCloseRequest(e -> {
-            clientClosingCallBacks.forEach(Runnable::run);
+            clientClosingCallBacks.forEach((key, value) -> {
+                IO.println("closing client socket 100");
+                value.run();
+            });
 
             if (serverSocket != null) {
                 try {
@@ -137,9 +140,14 @@ public class ClientServerSimpleGame {
             try {
                 clientSocket = new Socket("localhost", 12346);
 
-                // Setting up input and output streams
+                // Setting up input and output streams, the receiver objectinputstream will be blocked
+                // until I flush this stream, this means I need to do manual flushing, without it, the
+                // the messages won't be sent either, so the first flush is just to be able to let the receiver's
+                // constructor to build
                 var out = new ObjectOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
                 out.writeObject("Ok");
+                out.flush();
+
                 var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 // Start a thread to handle incoming messages
@@ -204,7 +212,7 @@ public class ClientServerSimpleGame {
     }
 
     private void initServerSocket() {
-        final List<ObjectOutputStream> writters = new CopyOnWriteArrayList<>();
+        final Map<Short, ObjectOutputStream> writters = new ConcurrentHashMap<>();
         final Deque<Player> movedPlayers = new ArrayDeque<>();
         try {
             this.serverSocket = new ServerSocket( 12346);
@@ -225,59 +233,69 @@ public class ClientServerSimpleGame {
                         return;
                     }
 
-                    clientClosingCallBacks.add(() -> {
-                        try {
-                            client.close();
-                        } catch (IOException e) {
-                            System.err.println("Error closing client socket");
-                        }
-                    });
-
                     executor.execute(() -> {
+                        var id = (short) idCounter.getAndIncrement();
+
+                        clientClosingCallBacks.put(id, () -> {
+                            try {
+                                client.close();
+                            } catch (IOException e) {
+                                System.err.println("Error closing client socket");
+                            }
+                        });
+
                         try {
                             var out = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream()));
 
-//                        System.out.println("Client connected");
-
                             // virtual thread for creating players
-                            IO.println("Streams Created");
                             executor.execute(() -> {
-                                var player = new Player((short) idCounter.getAndIncrement());
-                                IO.println("new player");
+                                var player = new Player(id);
+                                IO.println("new player " + id);
 
                                 try {
-                                    //sends a message and all current players to this client
-//                                    out.writeObject("Player Created");
+                                    //sends a message and all current players to new client
+                                    out.writeObject("Player Created");
                                     out.writeObject(players);
-                                    IO.println("wrote prev players");
-
-                                    executor.execute(() -> {
-                                        writters.add(out);
-                                        players.put(player.getPlayerId(), player);
-
-                                        Platform.runLater(() -> {
-                                            gameNodes.add(player);
-                                            IO.println("added player to game nodes in parent");
-                                        });
-
-                                        for (var writer : writters) {
-                                            try {
-                                                writer.writeObject(player);
-                                            } catch (IOException e) {
-                                                IO.println("Error sending newly added player");
-                                            }
-                                        }
-                                    });
+                                    IO.println("wrote prev players to playerId " + id);
                                 } catch (IOException e) {
-                                    IO.println("Error sending previous players to client");
+//                                    IO.println("Error sending previous players to client " + id);
+                                    IO.println("Error sending previous players to client " + id);
                                     throw new RuntimeException(e);
                                 }
+
+                                // concurrently add to all collections used in controlling the connections and trasmission
+                                // logic, and keeping clients updated
+                                executor.execute(() -> {
+                                    players.put(player.getPlayerId(), player);
+                                    writters.put(id, out);
+
+                                    // concurrently send new player individually to all connected clients
+                                    executor.execute(() -> {
+                                        writters.forEach((playerId, val) -> {
+                                            try {
+                                                val.writeObject(player);
+                                            } catch (IOException e) {
+                                                IO.println("Error sending new player " + id + " to player " + playerId);
+                                            }
+                                        });
+                                    });
+
+                                    // add new player visually in server
+                                    Platform.runLater(() -> {
+                                        gameNodes.add(player);
+                                        IO.println("added player to game nodes in parent " + id);
+                                    });
+                                });
                             });
 
+                            // Virtual thread is blocked here because it will waiting for new streams from client
                             try {
+                                IO.println("1 id " + id);
                                 var in = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
+                                IO.println("2 id " + id);
 
                                 var request = in.readObject();
+                                IO.println("3 id " + id);
                                 while (request != null) {
 //                                    if (request instanceof Request r) {
 //
@@ -301,29 +319,50 @@ public class ClientServerSimpleGame {
                                             var updatedPlayerInfo =
                                                     new Update(r.id(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
 
-                                            for (var writer: writters) {
+                                            writters.forEach((playerId, writer) -> {
                                                 try {
                                                     writer.writeObject(updatedPlayerInfo);
                                                 } catch (IOException e) {
-                                                    IO.println("Error sending updated player");
+                                                    IO.println("Error sending updating player " + r.id() + " in player " + playerId);
                                                 }
-                                            }
+                                            });
                                         }
-                                        case String _ -> System.out.println("Client sent ok");
+                                        case String _ -> IO.println("Client sent message " + request);
                                         default -> throw new IllegalStateException("Unexpected value: " + request);
                                     }
+
                                     request = in.readObject();
                                 }
-                            } catch (Exception e) {
-                                // ignoring exception since this means the server is disconnected and all clients have
-                                // been, therefore, disconnected
-                                System.out.println("Client disconnected from catch in server");
+                            } catch (EOFException | ClassNotFoundException e) {
+                                // An EOFException will be throw when the corresponding ObjectOutputStream(in the client side)
+                                // to ObjectInputStream we are reading objects from, is disconnected, this is what would've
+                                // happened if we are reading objects from a file and it reaches the end of the file
+                                // it won't return null or -1 as in other InputStreams, there is a way to tell if there is
+                                // more bytes to read with the `available` method to avoid relying on the EOF exception to
+                                // tell when a stream is either closed or reached end of file, but it seems that it could not be too
+                                // accurate and return 0 even when there is some bytes left in the stream, so we rather
+                                // using the catch to tell when the stream is closed or reached end of file, when working
+                                // with files this exception is thrown when the end of file is reached, and when working
+                                // with sockets it is thrown when the connection is closed
+                                System.out.println("Client disconnected after catch in server");
                                 writters.remove(out);
-                                throw new RuntimeException(e);
+
+                                clientClosingCallBacks.get(id).run();
+                                clientClosingCallBacks.remove(id);
+
+                                Platform.runLater(() -> {
+                                    gameNodes.remove(players.get(id));
+                                    players.remove(id);
+                                });
+
+                                try {
+                                    client.close();
+                                } catch (IOException ex) {
+                                    throw new RuntimeException(ex);
+                                }
                             }
 
-                            System.out.println("Client disconnected in server");
-                            writters.remove(out);
+                            System.out.println("Player " + id + " listener thread done");
                         } catch (IOException e) {
                             try {
                                 client.close();
