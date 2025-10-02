@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ClientServerSimpleGame {
     private List<Node> groupNodes;
@@ -145,7 +144,7 @@ public class ClientServerSimpleGame {
                     try {
                         clientSocket.close();
                     } catch (IOException e) {
-                        IO.println("Couldn't close player screen");
+                        IO.println("Couldn't close playerFactory screen");
                         throw new RuntimeException(e);
                     }
                 });
@@ -169,6 +168,8 @@ public class ClientServerSimpleGame {
                                     when remotePlayersFactory.keySet().iterator().next() instanceof Short
                                     && remotePlayersFactory.entrySet().iterator().next().getValue() instanceof PlayerFactory -> {
 
+                                // this case is not currently valid, I was previously storing playerFactory factories in a map
+                                // but not anymore
                                 var entrySet = ((Map<Short, PlayerFactory>) remotePlayersFactory).entrySet();
                                 Platform.runLater(() -> {
                                     entrySet.forEach(entry -> {
@@ -180,23 +181,23 @@ public class ClientServerSimpleGame {
                                     });
                                 });
                             }
-                            case PlayerFactory p -> {
-                                Platform.runLater(() -> {
-                                    var player = p.getPlayer();
-                                    playerNodes.put(p.getPlayerId(), player);
-                                    gameNodes.add(player);
+                            case AddPlayer p -> {
+                                var player = p.playerFactory().getPlayer();
 
-                                });
+                                Platform.runLater(() -> gameNodes.add(player));
 
-                                IO.println("Player " + 1 + " screen added single player Id " + p.getPlayerId() );
+                                playerNodes.put(p.playerFactory().getPlayerId(), player);
+
+                                IO.println("Player " + 1 + " screen added single playerFactory Id " + p.playerFactory().getPlayerId() );
                             }
-                            case String s -> IO.println(s);
-                            case DeleteUpdate d -> {
-                                Platform.runLater(() -> {
-                                    gameNodes.remove(playerNodes.get(d.id()));
-                                    playerNodes.remove(d.id());
-                                });
+                            case SetUpNewPlayer p -> {
+                                // When a client connects the serve is who generates
+
                             }
+                            case DeleteUpdate d -> Platform.runLater(() -> {
+                                gameNodes.remove(playerNodes.get(d.id()));
+                                playerNodes.remove(d.id());
+                            });
                             default -> IO.println("Couldn't read response or cast was not successful, waiting for next message");
                         }
 
@@ -211,13 +212,6 @@ public class ClientServerSimpleGame {
                         }
                     }
                 });
-
-                // Setting up input and output streams, the receiver objectinputstream will be blocked
-                // until I flush this stream, this means I need to do manual flushing, without it, the
-                // the messages won't be sent either, so the first flush is just to be able to let the receiver's
-                // constructor to build
-                var out = new ObjectOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
-
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -316,8 +310,8 @@ public class ClientServerSimpleGame {
 //                                                        );
 //                                                out.writeObject(currentPlayers);
 
-                                        out.writeObject(player.toFactory());
-                                        IO.println("wrote prev player " + playerId + " to playerId " + id);
+                                        out.writeObject(new AddPlayer(player.toFactory()));
+                                        IO.println("wrote prev playerFactory " + playerId + " to playerId " + id);
                                     } catch (IOException e) {
 //                                    IO.println("Error sending previous players to client " + id);
                                         IO.println("Error sending previous players " + playerId + " to client " + id);
@@ -336,10 +330,17 @@ public class ClientServerSimpleGame {
 
                                     // concurrently send new playerFactory individually to all connected clients
                                     executor.execute(() -> {
+                                        var request = new AddPlayer(playerFactory);
+
                                         writters.forEach((playerId, writter) -> {
                                             try {
-                                                writter.writeObject(playerFactory);
-                                                writter.flush();
+                                                if (playerId == id) {
+                                                    writter.writeObject(new SetUpNewPlayer(playerFactory));
+                                                    writter.flush();
+                                                } else {
+                                                    writter.writeObject(request);
+                                                    writter.flush();
+                                                }
                                             } catch (IOException e) {
                                                 IO.println("Error sending new playerFactory " + id + " to playerFactory " + playerId);
                                             }
@@ -371,7 +372,7 @@ public class ClientServerSimpleGame {
 //                                    }
                                     switch (request) {
                                         case Request r -> {
-                                            var requestedPlayer = playerNodes.get(r.id());
+                                            var requestedPlayer = playerNodes.get(r.playerId());
 
                                             for (var key: r.codes()) {
                                                 if (key == KeyCode.W) {
@@ -386,13 +387,13 @@ public class ClientServerSimpleGame {
                                             }
 
                                             var updatedPlayerInfo =
-                                                    new Update(r.id(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
+                                                    new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
 
                                             writters.forEach((playerId, writer) -> {
                                                 try {
                                                     writer.writeObject(updatedPlayerInfo);
                                                 } catch (IOException e) {
-                                                    IO.println("Error sending updating player " + r.id() + " in player " + playerId);
+                                                    IO.println("Error sending updating playerFactory " + r.playerId() + " in playerFactory " + playerId);
                                                 }
                                             });
                                         }
@@ -415,7 +416,7 @@ public class ClientServerSimpleGame {
                                 // with sockets it is thrown when the connection is closed
                                 System.out.println("Client disconnected after catch in server");
                                 writters.remove(id);
-                                // inform all other writers a player has disconnected
+                                // inform all other writers a playerFactory has disconnected
 
                                 var deleteRequest = new DeleteUpdate(id);
                                 writters.forEach((playerId, writer) -> {
@@ -423,7 +424,7 @@ public class ClientServerSimpleGame {
                                         writer.writeObject(deleteRequest);
                                         writer.flush();
                                     } catch (IOException ex) {
-                                        IO.println("Error sending delete request of " + id + " to player id " + playerId);
+                                        IO.println("Error sending delete request of " + id + " to playerFactory id " + playerId);
                                     }
                                 });
 
