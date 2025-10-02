@@ -33,18 +33,21 @@ public class ClientServerSimpleGame {
 
     private ServerSocket serverSocket;
     Socket clientSocket;
+    private final Scene scene;
+    private final Stage stage;
 
-    public void displayScreen(Runnable runnable) {
-        Stage stage = new Stage();
-        stage.setTitle("Networking");
+    public ClientServerSimpleGame() {
+        stage = new Stage();
 
         var group = new Group();
         groupNodes = group.getChildren();
 
-        var scene = new Scene(group, 600, 400);
+        scene = new Scene(group, 600, 400);
 
         scene.setFill(Paint.valueOf("#000000"));
+    }
 
+    public void displayScreen(Runnable runnable) {
         HashMap<String, Function<Scene, Pane>> transformations1 = getScreens();
         ObservableList<String> options = FXCollections.observableArrayList(transformations1.keySet());
 
@@ -73,7 +76,7 @@ public class ClientServerSimpleGame {
         transformationsComboBox.setLayoutX(10);
         transformationsComboBox.setLayoutY(10);
 
-        group.getChildren().add(transformationsComboBox);
+        groupNodes.add(transformationsComboBox);
 
         stage.setScene(scene);
 
@@ -182,19 +185,42 @@ public class ClientServerSimpleGame {
                                 });
                             }
                             case AddPlayer p -> {
-                                var player = p.playerFactory().getPlayer();
-
-                                Platform.runLater(() -> gameNodes.add(player));
-
-                                playerNodes.put(p.playerFactory().getPlayerId(), player);
-
-                                IO.println("Player " + 1 + " screen added single playerFactory Id " + p.playerFactory().getPlayerId() );
+                                addPlayer(p.playerFactory());
                             }
                             case SetUpNewPlayer p -> {
-                                // When a client connects the serve is who generates
+                                addPlayer(p.playerFactory());
+
+                                final ObjectOutputStream out;
+
+                                try {
+                                    out = new ObjectOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+
+                                    scene.setOnKeyPressed(e -> {
+                                        try {
+                                            if (e.getCode() == KeyCode.A) {
+                                                out.writeObject(new UpdatePlayer(p.playerFactory().getPlayerId(), KeyCode.A));
+                                                out.flush();
+                                            } else if (e.getCode() == KeyCode.D) {
+                                                out.writeObject(new UpdatePlayer(p.playerFactory().getPlayerId(), KeyCode.D));
+                                                out.flush();
+                                            } else if (e.getCode() == KeyCode.W) {
+                                                out.writeObject(new UpdatePlayer(p.playerFactory().getPlayerId(), KeyCode.W));
+                                                out.flush();
+                                            } else if (e.getCode() == KeyCode.S) {
+                                                out.writeObject(new UpdatePlayer(p.playerFactory().getPlayerId(), KeyCode.S));
+                                                out.flush();
+                                            }
+                                        } catch (IOException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+                                    });
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+
 
                             }
-                            case DeleteUpdate d -> Platform.runLater(() -> {
+                            case DeletePlayer d -> Platform.runLater(() -> {
                                 gameNodes.remove(playerNodes.get(d.id()));
                                 playerNodes.remove(d.id());
                             });
@@ -216,6 +242,16 @@ public class ClientServerSimpleGame {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void addPlayer(PlayerFactory p) {
+        var player = p.getPlayer();
+
+        Platform.runLater(() -> gameNodes.add(player));
+
+        playerNodes.put(p.getPlayerId(), player);
+
+        IO.println("Player " + 1 + " screen added single playerFactory Id " + p.getPlayerId());
     }
 
     private Pane serverPlayer(Scene scene) {
@@ -371,30 +407,33 @@ public class ClientServerSimpleGame {
 //
 //                                    }
                                     switch (request) {
-                                        case Request r -> {
+                                        case UpdatePlayer r -> {
                                             var requestedPlayer = playerNodes.get(r.playerId());
 
-                                            for (var key: r.codes()) {
-                                                if (key == KeyCode.W) {
+                                            executor.execute(() -> {
+                                                if (r.code() == KeyCode.W) {
                                                     requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() - 5);
-                                                } else if (key == KeyCode.A) {
+                                                } else if (r.code() == KeyCode.A) {
                                                     requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() - 5);
-                                                } else if (key == KeyCode.S) {
+                                                } else if (r.code() == KeyCode.S) {
                                                     requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() + 5);
-                                                } else if (key == KeyCode.D) {
+                                                } else if (r.code() == KeyCode.D) {
                                                     requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() + 5);
                                                 }
-                                            }
+                                            });
 
-                                            var updatedPlayerInfo =
-                                                    new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
+                                            executor.execute(() -> {
+                                                var updatedPlayerInfo =
+                                                        new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
 
-                                            writters.forEach((playerId, writer) -> {
-                                                try {
-                                                    writer.writeObject(updatedPlayerInfo);
-                                                } catch (IOException e) {
-                                                    IO.println("Error sending updating playerFactory " + r.playerId() + " in playerFactory " + playerId);
-                                                }
+                                                writters.forEach((playerId, writer) -> {
+                                                    try {
+                                                        writer.writeObject(updatedPlayerInfo);
+                                                        writer.flush();
+                                                    } catch (IOException e) {
+                                                        IO.println("Error sending updating playerFactory " + r.playerId() + " in playerFactory " + playerId);
+                                                    }
+                                                });
                                             });
                                         }
                                         case String _ -> IO.println("Client sent message " + request);
@@ -418,7 +457,7 @@ public class ClientServerSimpleGame {
                                 writters.remove(id);
                                 // inform all other writers a playerFactory has disconnected
 
-                                var deleteRequest = new DeleteUpdate(id);
+                                var deleteRequest = new DeletePlayer(id);
                                 writters.forEach((playerId, writer) -> {
                                     try {
                                         writer.writeObject(deleteRequest);
