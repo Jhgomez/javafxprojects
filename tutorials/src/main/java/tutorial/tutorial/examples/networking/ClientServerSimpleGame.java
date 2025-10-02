@@ -184,10 +184,9 @@ public class ClientServerSimpleGame {
                                     });
                                 });
                             }
-                            case AddPlayer p -> {
-                                addPlayer(p.playerFactory());
-                            }
-                            case SetUpNewPlayer p -> {
+                            // this one has to be synchronous to avoid missing updates
+                            case AddPlayer p -> addPlayer(p.playerFactory());
+                            case SetUpNewPlayer p -> executor.execute(() -> {
                                 addPlayer(p.playerFactory());
 
                                 final ObjectOutputStream out;
@@ -217,8 +216,12 @@ public class ClientServerSimpleGame {
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
+                            });
+                            case Update request -> {
+                                final var player = playerNodes.get(request.playerId());
 
-
+                                player.setTranslateX(request.x());
+                                player.setTranslateY(request.y());
                             }
                             case DeletePlayer d -> Platform.runLater(() -> {
                                 gameNodes.remove(playerNodes.get(d.id()));
@@ -349,7 +352,7 @@ public class ClientServerSimpleGame {
                                         out.writeObject(new AddPlayer(player.toFactory()));
                                         IO.println("wrote prev playerFactory " + playerId + " to playerId " + id);
                                     } catch (IOException e) {
-//                                    IO.println("Error sending previous players to client " + id);
+//                                    IO.println("Error sending previous players to client " + playerId);
                                         IO.println("Error sending previous players " + playerId + " to client " + id);
                                         throw new RuntimeException(e);
                                     }
@@ -358,10 +361,6 @@ public class ClientServerSimpleGame {
                                 // concurrently add to all collections used in controlling the connections and trasmission
                                 // logic, and keeping clients updated
                                 executor.execute(() -> {
-//                                    players.put(playerFactory.getPlayerId(), new Player((short) 2));
-//                                    playersFactory.put(playerFactory.getPlayerId(), playerFactory);
-//                                    players.put(playerFactory.getPlayerId(), new Player((short) 3));
-
                                     writters.put(id, out);
 
                                     // concurrently send new playerFactory individually to all connected clients
@@ -396,21 +395,21 @@ public class ClientServerSimpleGame {
 
                             // Virtual thread is blocked here because it will waiting for new streams from client
                             try {
-                                IO.println("1 id " + id);
+                                IO.println("1 playerId " + id);
                                 var in = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
-                                IO.println("2 id " + id);
+                                IO.println("2 playerId " + id);
 
                                 var request = in.readObject();
-                                IO.println("3 id " + id);
+                                IO.println("3 playerId " + id);
                                 while (request != null) {
 //                                    if (request instanceof Request r) {
 //
 //                                    }
                                     switch (request) {
                                         case UpdatePlayer r -> {
-                                            var requestedPlayer = playerNodes.get(r.playerId());
-
                                             executor.execute(() -> {
+                                                var requestedPlayer = playerNodes.get(r.playerId());
+
                                                 if (r.code() == KeyCode.W) {
                                                     requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() - 5);
                                                 } else if (r.code() == KeyCode.A) {
@@ -420,19 +419,21 @@ public class ClientServerSimpleGame {
                                                 } else if (r.code() == KeyCode.D) {
                                                     requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() + 5);
                                                 }
-                                            });
 
-                                            executor.execute(() -> {
-                                                var updatedPlayerInfo =
-                                                        new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
+                                                executor.execute(() -> {
+                                                    var updatedPlayerInfo =
+                                                            new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
 
-                                                writters.forEach((playerId, writer) -> {
-                                                    try {
-                                                        writer.writeObject(updatedPlayerInfo);
-                                                        writer.flush();
-                                                    } catch (IOException e) {
-                                                        IO.println("Error sending updating playerFactory " + r.playerId() + " in playerFactory " + playerId);
-                                                    }
+                                                    writters.forEach((playerId, writer) -> {
+                                                        executor.execute(() -> {
+                                                            try {
+                                                                writer.writeObject(updatedPlayerInfo);
+                                                                writer.flush();
+                                                            } catch (IOException e) {
+                                                                IO.println("Error sending updating playerFactory " + r.playerId() + " in playerFactory " + playerId);
+                                                            }
+                                                        });
+                                                    });
                                                 });
                                             });
                                         }
@@ -463,7 +464,7 @@ public class ClientServerSimpleGame {
                                         writer.writeObject(deleteRequest);
                                         writer.flush();
                                     } catch (IOException ex) {
-                                        IO.println("Error sending delete request of " + id + " to playerFactory id " + playerId);
+                                        IO.println("Error sending delete request of " + id + " to playerFactory playerId " + playerId);
                                     }
                                 });
 
@@ -474,7 +475,7 @@ public class ClientServerSimpleGame {
                                 Platform.runLater(() -> {
                                     gameNodes.remove(playerNodes.get(id));
                                     playerNodes.remove(id);
-//                                    playersFactory.remove(id);
+//                                    playersFactory.remove(playerId);
                                 });
 
                                 try {
