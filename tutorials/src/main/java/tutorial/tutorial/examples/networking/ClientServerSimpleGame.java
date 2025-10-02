@@ -20,14 +20,15 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ClientServerSimpleGame {
     private List<Node> groupNodes;
     private List<Node> gameNodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private Map<Short, PlayerFactory> playersFactory = new ConcurrentHashMap<>();
-    private Map<Short, Node> playerNodes = new ConcurrentHashMap<>();
+//    private Map<Short, PlayerFactory> playersFactory = new ConcurrentHashMap<>();
+    private Map<Short, Player> playerNodes = new ConcurrentHashMap<>();
     private final Map<Short, Runnable> clientClosingCallBacks = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
@@ -185,7 +186,6 @@ public class ClientServerSimpleGame {
                                     playerNodes.put(p.getPlayerId(), player);
                                     gameNodes.add(player);
 
-
                                 });
 
                                 IO.println("Player " + 1 + " screen added single player Id " + p.getPlayerId() );
@@ -247,8 +247,6 @@ public class ClientServerSimpleGame {
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
 
-        playersFactory.put(playerFactory.getPlayerId(), playerFactory);
-
         return pane;
     }
 
@@ -301,23 +299,37 @@ public class ClientServerSimpleGame {
 
                                 IO.println("new playerFactory " + id);
 
-                                try {
-                                    //sends a message and all current players to new client
-                                    out.writeObject("Player Factory Created");
-                                    out.writeObject(playersFactory);
+                                //sends a message and all current players
+                                playerNodes.forEach((playerId, player) -> {
+                                    try {
 
-                                    IO.println("wrote prev players to playerId " + id + " players size " + playersFactory.size());
-                                } catch (IOException e) {
+                                        // we could have done it this way but we lose the iterator ability a concurrent map has
+                                        // which is iterate on entries that are added concurrently so we will do it with a for each
+//                                                var currentPlayers = playerNodes
+//                                                        .entrySet()
+//                                                        .stream()
+//                                                        .collect(
+//                                                                Collectors.toMap(
+//                                                                        Map.Entry::getKey,
+//                                                                        entry -> entry.getValue().toFactory()
+//                                                                )
+//                                                        );
+//                                                out.writeObject(currentPlayers);
+
+                                        out.writeObject(player.toFactory());
+                                        IO.println("wrote prev player " + playerId + " to playerId " + id);
+                                    } catch (IOException e) {
 //                                    IO.println("Error sending previous players to client " + id);
-                                    IO.println("Error sending previous players to client " + id);
-                                    throw new RuntimeException(e);
-                                }
+                                        IO.println("Error sending previous players " + playerId + " to client " + id);
+                                        throw new RuntimeException(e);
+                                    }
+                                });
 
                                 // concurrently add to all collections used in controlling the connections and trasmission
                                 // logic, and keeping clients updated
                                 executor.execute(() -> {
 //                                    players.put(playerFactory.getPlayerId(), new Player((short) 2));
-                                    playersFactory.put(playerFactory.getPlayerId(), playerFactory);
+//                                    playersFactory.put(playerFactory.getPlayerId(), playerFactory);
 //                                    players.put(playerFactory.getPlayerId(), new Player((short) 3));
 
                                     writters.put(id, out);
@@ -332,8 +344,6 @@ public class ClientServerSimpleGame {
                                                 IO.println("Error sending new playerFactory " + id + " to playerFactory " + playerId);
                                             }
                                         });
-
-
                                     });
 
                                     // add new playerFactory visually in server
@@ -424,7 +434,7 @@ public class ClientServerSimpleGame {
                                 Platform.runLater(() -> {
                                     gameNodes.remove(playerNodes.get(id));
                                     playerNodes.remove(id);
-                                    playersFactory.remove(id);
+//                                    playersFactory.remove(id);
                                 });
 
                                 try {
