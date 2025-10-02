@@ -26,7 +26,8 @@ public class ClientServerSimpleGame {
     private List<Node> gameNodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private Map<Short, PlayerFactory> players = new ConcurrentHashMap<>();
+    private Map<Short, PlayerFactory> playersFactory = new ConcurrentHashMap<>();
+    private Map<Short, Node> playerNodes = new ConcurrentHashMap<>();
     private final Map<Short, Runnable> clientClosingCallBacks = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
@@ -163,25 +164,30 @@ public class ClientServerSimpleGame {
 
                     while (response != null) {
                         switch (response) {
-                            case Map<?, ?> remotePlayers
-                                    when remotePlayers.keySet().iterator().next() instanceof Short
-                                    && remotePlayers.entrySet().iterator().next().getValue() instanceof PlayerFactory -> {
-                                players.putAll((Map<Short, PlayerFactory>) remotePlayers);
+                            case Map<?, ?> remotePlayersFactory
+                                    when remotePlayersFactory.keySet().iterator().next() instanceof Short
+                                    && remotePlayersFactory.entrySet().iterator().next().getValue() instanceof PlayerFactory -> {
 
-                                var entrySet = ((Map<Short, PlayerFactory>) remotePlayers).entrySet();
+                                var entrySet = ((Map<Short, PlayerFactory>) remotePlayersFactory).entrySet();
                                 Platform.runLater(() -> {
                                     entrySet.forEach(entry -> {
-                                        gameNodes.add(entry.getValue().getPlayer());
+                                        var player = entry.getValue().getPlayer();
+                                        playerNodes.put(entry.getKey(), player);
+                                        gameNodes.add(player);
+
                                         IO.println("Player " + 1 + " screen added playerId " + entry.getKey());
                                     });
                                 });
                             }
                             case PlayerFactory p -> {
                                 Platform.runLater(() -> {
-                                    gameNodes.add(p.getPlayer());
+                                    var player = p.getPlayer();
+                                    playerNodes.put(p.getPlayerId(), player);
+                                    gameNodes.add(player);
+
+
                                 });
 
-                                players.put(p.getPlayerId(), p);
                                 IO.println("Player " + 1 + " screen added single player Id " + p.getPlayerId() );
                             }
                             default -> IO.println("Couldn't read response or cast was not successful, waiting for next message");
@@ -216,16 +222,25 @@ public class ClientServerSimpleGame {
 
         initServerSocket(random);
 
-        var player = new PlayerFactory((short) idCounter.getAndIncrement(), "RED", random.nextDouble(800), random.nextDouble(600));
+        var playerFactory = new PlayerFactory(
+                (short) idCounter.getAndIncrement(),
+                "RED",
+                random.nextDouble(775),
+                random.nextDouble(575)
+        );
 
-        var pane = new Pane(player.getPlayer());
+        var player = playerFactory.getPlayer();
+
+        var pane = new Pane(player);
+
+        playerNodes.put(playerFactory.getPlayerId(), player);
 
         gameNodes = Collections.synchronizedList(pane.getChildren());
 
         pane.setPrefSize(800, 600);
         pane.setStyle("-fx-background-color: #123456");
 
-        players.put(player.getPlayerId(), player);
+        playersFactory.put(playerFactory.getPlayerId(), playerFactory);
 
         return pane;
     }
@@ -270,15 +285,21 @@ public class ClientServerSimpleGame {
 
                             // virtual thread for creating players
                             executor.execute(() -> {
-                                var player = new PlayerFactory(id, "WHITE", random.nextDouble(800), random.nextDouble(600));
-                                IO.println("new player " + id);
+                                var playerFactory = new PlayerFactory(
+                                        id,
+                                        "WHITE",
+                                        random.nextDouble(775),
+                                        random.nextDouble(575)
+                                );
+
+                                IO.println("new playerFactory " + id);
 
                                 try {
                                     //sends a message and all current players to new client
-                                    out.writeObject("Player Created");
-                                    out.writeObject(players);
+                                    out.writeObject("Player Factory Created");
+                                    out.writeObject(playersFactory);
 
-                                    IO.println("wrote prev players to playerId " + id + " players size " + players.size());
+                                    IO.println("wrote prev players to playerId " + id + " players size " + playersFactory.size());
                                 } catch (IOException e) {
 //                                    IO.println("Error sending previous players to client " + id);
                                     IO.println("Error sending previous players to client " + id);
@@ -288,30 +309,33 @@ public class ClientServerSimpleGame {
                                 // concurrently add to all collections used in controlling the connections and trasmission
                                 // logic, and keeping clients updated
                                 executor.execute(() -> {
-//                                    players.put(player.getPlayerId(), new Player((short) 2));
-                                    players.put(player.getPlayerId(), player);
-//                                    players.put(player.getPlayerId(), new Player((short) 3));
+//                                    players.put(playerFactory.getPlayerId(), new Player((short) 2));
+                                    playersFactory.put(playerFactory.getPlayerId(), playerFactory);
+//                                    players.put(playerFactory.getPlayerId(), new Player((short) 3));
 
                                     writters.put(id, out);
 
-                                    // concurrently send new player individually to all connected clients
+                                    // concurrently send new playerFactory individually to all connected clients
                                     executor.execute(() -> {
                                         writters.forEach((playerId, writter) -> {
                                             try {
-                                                writter.writeObject(player);
+                                                writter.writeObject(playerFactory);
                                                 writter.flush();
                                             } catch (IOException e) {
-                                                IO.println("Error sending new player " + id + " to player " + playerId);
+                                                IO.println("Error sending new playerFactory " + id + " to playerFactory " + playerId);
                                             }
                                         });
 
 
                                     });
 
-                                    // add new player visually in server
+                                    // add new playerFactory visually in server
                                     Platform.runLater(() -> {
-                                        gameNodes.add(player.getPlayer());
-                                        IO.println("added player to game nodes in parent " + id);
+                                        var player = playerFactory.getPlayer();
+                                        playerNodes.put(playerFactory.getPlayerId(), player);
+
+                                        gameNodes.add(player);
+                                        IO.println("added playerFactory to game nodes in parent " + id);
                                     });
                                 });
                             });
@@ -330,7 +354,7 @@ public class ClientServerSimpleGame {
 //                                    }
                                     switch (request) {
                                         case Request r -> {
-                                            var requestedPlayer = players.get(r.id()).getPlayer();
+                                            var requestedPlayer = playerNodes.get(r.id());
 
                                             for (var key: r.codes()) {
                                                 if (key == KeyCode.W) {
@@ -379,10 +403,9 @@ public class ClientServerSimpleGame {
                                 clientClosingCallBacks.remove(id);
 
 
-
                                 Platform.runLater(() -> {
-                                    gameNodes.remove(players.get(id));
-                                    players.remove(id);
+                                    gameNodes.remove(playersFactory.get(id));
+                                    playersFactory.remove(id);
                                 });
 
                                 try {
