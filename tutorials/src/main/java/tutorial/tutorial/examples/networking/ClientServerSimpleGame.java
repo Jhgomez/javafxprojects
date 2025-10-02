@@ -9,9 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.io.*;
@@ -28,7 +26,7 @@ public class ClientServerSimpleGame {
     private List<Node> gameNodes;
     private final ComboBox<String> transformationsComboBox = new ComboBox<>();
     ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private ConcurrentMap<Short, Node> players = new ConcurrentHashMap<>();
+    private Map<Short, PlayerFactory> players = new ConcurrentHashMap<>();
     private final Map<Short, Runnable> clientClosingCallBacks = new ConcurrentHashMap<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
 
@@ -123,8 +121,6 @@ public class ClientServerSimpleGame {
     }
 
     private Pane clientPlayer(Scene scene) {
-        initClientSocket();
-
         var pane = new Pane();
 
         pane.setPrefSize(800, 600);
@@ -132,62 +128,83 @@ public class ClientServerSimpleGame {
 
         gameNodes = Collections.synchronizedList(pane.getChildren());
 
+        initClientSocket();
+
         return pane;
     }
 
+    @SuppressWarnings("unchecked")
     private void initClientSocket() {
         executor.execute(() -> {
             try {
                 clientSocket = new Socket("localhost", 12346);
+
+                clientClosingCallBacks.put((short) 1, () -> {
+                    try {
+                        clientSocket.close();
+                    } catch (IOException e) {
+                        IO.println("Couldn't close player screen");
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                var in = new ObjectInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+
+                // Start a thread to handle incoming messages
+                executor.execute(() -> {
+
+                    var response = new Object();
+
+                    try {
+                        response = in.readObject();
+                    } catch (IOException | ClassNotFoundException e) {
+                        IO.println("unable to read first response " + e.getMessage());
+                    }
+
+                    while (response != null) {
+                        switch (response) {
+                            case Map<?, ?> remotePlayers
+                                    when remotePlayers.keySet().iterator().next() instanceof Short
+                                    && remotePlayers.entrySet().iterator().next().getValue() instanceof PlayerFactory -> {
+                                players.putAll((Map<Short, PlayerFactory>) remotePlayers);
+
+                                var entrySet = ((Map<Short, PlayerFactory>) remotePlayers).entrySet();
+                                Platform.runLater(() -> {
+                                    entrySet.forEach(entry -> {
+                                        gameNodes.add(entry.getValue().getPlayer());
+                                        IO.println("Player " + 1 + " screen added playerId " + entry.getKey());
+                                    });
+                                });
+                            }
+                            case PlayerFactory p -> {
+                                Platform.runLater(() -> {
+                                    gameNodes.add(p.getPlayer());
+                                });
+
+                                players.put(p.getPlayerId(), p);
+                                IO.println("Player " + 1 + " screen added single player Id " + p.getPlayerId() );
+                            }
+                            default -> IO.println("Couldn't read response or cast was not successful, waiting for next message");
+                        }
+
+                        try {
+                            response = in.readObject();
+                        } catch (ClassNotFoundException e) {
+                            response = new Object();
+                            IO.println("unable to read response " + e.getMessage());
+                        } catch (IOException e) {
+                            response = null;
+                            IO.println("unable to read response " + e.getMessage());
+                        }
+                    }
+                });
 
                 // Setting up input and output streams, the receiver objectinputstream will be blocked
                 // until I flush this stream, this means I need to do manual flushing, without it, the
                 // the messages won't be sent either, so the first flush is just to be able to let the receiver's
                 // constructor to build
                 var out = new ObjectOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
-                out.writeObject("Ok");
-                out.flush();
 
-                var in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-                // Start a thread to handle incoming messages
-//                executor.execute(() -> {
-//                    try {
-//                        var message = "";
-//                        while ((message = in.readLine()) != null) {
-//                            System.out.println("\n- " + message);
-//                            System.out.print("> ");
-//                        }
-//                    } catch (IOException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//                });
-
-                try {
-                    var message = "";
-                    while ((message = in.readLine()) != null) {
-                        System.out.println("\n- " + message);
-                        System.out.print("> ");
-                    }
-                } catch (SocketException e) {
-                    IO.println("Client disconnected");
-                }catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-//                // Read messages from the console and send to the server
-//                Scanner scanner = new Scanner(System.in);
-//                String userInput = "";
-//                while (true) {
-////                System.out.print("Waiting for client input: ");
-//                    System.out.print("> ");
-//
-//                    userInput = scanner.nextLine();
-//
-//                    out.println(userInput);
-//
-////                System.out.println("Input sent to server: " + userInput);
-//                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -195,11 +212,13 @@ public class ClientServerSimpleGame {
     }
 
     private Pane serverPlayer(Scene scene) {
-        initServerSocket();
+        final Random random = new Random();
 
-        var player = new Player((short) idCounter.getAndIncrement());
+        initServerSocket(random);
 
-        var pane = new Pane(player);
+        var player = new PlayerFactory((short) idCounter.getAndIncrement(), "RED", random.nextDouble(800), random.nextDouble(600));
+
+        var pane = new Pane(player.getPlayer());
 
         gameNodes = Collections.synchronizedList(pane.getChildren());
 
@@ -211,9 +230,11 @@ public class ClientServerSimpleGame {
         return pane;
     }
 
-    private void initServerSocket() {
+    private void initServerSocket(Random random) {
         final Map<Short, ObjectOutputStream> writters = new ConcurrentHashMap<>();
-        final Deque<Player> movedPlayers = new ArrayDeque<>();
+        final Deque<PlayerFactory> movedPlayers = new ArrayDeque<>();
+
+
         try {
             this.serverSocket = new ServerSocket( 12346);
         } catch (IOException e) {
@@ -249,14 +270,15 @@ public class ClientServerSimpleGame {
 
                             // virtual thread for creating players
                             executor.execute(() -> {
-                                var player = new Player(id);
+                                var player = new PlayerFactory(id, "WHITE", random.nextDouble(800), random.nextDouble(600));
                                 IO.println("new player " + id);
 
                                 try {
                                     //sends a message and all current players to new client
                                     out.writeObject("Player Created");
                                     out.writeObject(players);
-                                    IO.println("wrote prev players to playerId " + id);
+
+                                    IO.println("wrote prev players to playerId " + id + " players size " + players.size());
                                 } catch (IOException e) {
 //                                    IO.println("Error sending previous players to client " + id);
                                     IO.println("Error sending previous players to client " + id);
@@ -266,23 +288,29 @@ public class ClientServerSimpleGame {
                                 // concurrently add to all collections used in controlling the connections and trasmission
                                 // logic, and keeping clients updated
                                 executor.execute(() -> {
+//                                    players.put(player.getPlayerId(), new Player((short) 2));
                                     players.put(player.getPlayerId(), player);
+//                                    players.put(player.getPlayerId(), new Player((short) 3));
+
                                     writters.put(id, out);
 
                                     // concurrently send new player individually to all connected clients
                                     executor.execute(() -> {
-                                        writters.forEach((playerId, val) -> {
+                                        writters.forEach((playerId, writter) -> {
                                             try {
-                                                val.writeObject(player);
+                                                writter.writeObject(player);
+                                                writter.flush();
                                             } catch (IOException e) {
                                                 IO.println("Error sending new player " + id + " to player " + playerId);
                                             }
                                         });
+
+
                                     });
 
                                     // add new player visually in server
                                     Platform.runLater(() -> {
-                                        gameNodes.add(player);
+                                        gameNodes.add(player.getPlayer());
                                         IO.println("added player to game nodes in parent " + id);
                                     });
                                 });
@@ -302,7 +330,7 @@ public class ClientServerSimpleGame {
 //                                    }
                                     switch (request) {
                                         case Request r -> {
-                                            var requestedPlayer = players.get(r.id());
+                                            var requestedPlayer = players.get(r.id()).getPlayer();
 
                                             for (var key: r.codes()) {
                                                 if (key == KeyCode.W) {
@@ -345,10 +373,12 @@ public class ClientServerSimpleGame {
                                 // with files this exception is thrown when the end of file is reached, and when working
                                 // with sockets it is thrown when the connection is closed
                                 System.out.println("Client disconnected after catch in server");
-                                writters.remove(out);
+                                writters.remove(id);
 
                                 clientClosingCallBacks.get(id).run();
                                 clientClosingCallBacks.remove(id);
+
+
 
                                 Platform.runLater(() -> {
                                     gameNodes.remove(players.get(id));
