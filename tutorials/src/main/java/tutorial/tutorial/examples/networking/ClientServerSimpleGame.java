@@ -25,8 +25,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static tutorial.tutorial.examples.networking.Key.*;
-
 public class ClientServerSimpleGame {
     private final List<Node> groupNodes;
     private List<Node> gameNodes;
@@ -35,7 +33,7 @@ public class ClientServerSimpleGame {
     private final Map<Short, Player> playerNodes = new ConcurrentHashMap<>();
     private final Map<Short, Runnable> clientClosingCallBacks = new ConcurrentHashMap<>();
     final Map<Short, ObjectOutputStream> writers = new ConcurrentHashMap<>();
-    private final Key[] keys = new Key[4];
+    private final KeyCode[] keys = new KeyCode[4];
     private final AtomicInteger idCounter = new AtomicInteger(0);
     private ObjectOutputStream out;
     private short playerId = -1;
@@ -114,13 +112,13 @@ public class ClientServerSimpleGame {
 
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.A) {
-                keys[0] = A;
+                keys[0] = KeyCode.A;
             } else if (e.getCode() == KeyCode.D) {
-                keys[1] = D;
+                keys[1] = KeyCode.D;
             } else if (e.getCode() == KeyCode.W) {
-                keys[2] = W;
+                keys[2] = KeyCode.W;
             } else if (e.getCode() == KeyCode.S) {
-                keys[3] = S;
+                keys[3] = KeyCode.S;
             }
         });
 
@@ -182,21 +180,7 @@ public class ClientServerSimpleGame {
         if (isServer && shouldUpdate) {
             var serverPlayer = playerNodes.get(playerId);
 
-            for (var k : keys) {
-                if (k == W) {
-                    serverPlayer.setTranslateY(serverPlayer.getTranslateY() - 5);
-                    //io.println("W");
-                } else if (k == A) {
-                    serverPlayer.setTranslateX(serverPlayer.getTranslateX() - 5);
-                    //io.println("A");
-                } else if (k == S) {
-                    serverPlayer.setTranslateY(serverPlayer.getTranslateY() + 5);
-                    //io.println("S");
-                } else if (k == D) {
-                    serverPlayer.setTranslateX(serverPlayer.getTranslateX() + 5);
-                    //io.println("D");
-                }
-            }
+            translatePlayer(serverPlayer, keys);
 
             var updateRequest = new Update(serverPlayer.getPlayerId(), serverPlayer.getTranslateX(), serverPlayer.getTranslateY());
 
@@ -213,7 +197,7 @@ public class ClientServerSimpleGame {
         } else if (!isServer && shouldUpdate) {
             if (out != null) {
                 try {
-                    Key[] newKeys = Arrays.copyOf(keys, keys.length);
+                    KeyCode[] newKeys = Arrays.copyOf(keys, keys.length);
                     if (playerId < 0) {
                         IO.println("Player id not init");
                         return;
@@ -307,25 +291,22 @@ public class ClientServerSimpleGame {
                             }
                             // this one has to be synchronous to avoid missing updates
                             case AddPlayer p -> addPlayer(p.playerFactory());
-                            case SetUpNewPlayer p -> executor.execute(() -> {
+                            // this one helps us assign the playerId
+                            case SetUpNewPlayer p -> {
                                 addPlayer(p.playerFactory());
 
                                 playerId = p.playerFactory().getPlayerId();
-                            });
+                            }
                             case Update request -> {
-                                if (request.playerId() < 0 || request.playerId() > playerNodes.size() - 1) {
+                                if (request.playerId() < 0 || playerNodes.get(request.playerId()) == null) {
                                     IO.println("index invalido " + request.playerId());
-                                    return;
-                                }
-
-                                final var player = playerNodes.get(request.playerId());
-
-                                if (player == null) {
-                                    IO.println("Es nulo " + request.playerId());
                                 } else {
-                                    IO.println("no nulo " + request.playerId());
+                                    final var player = playerNodes.get(request.playerId());
+
+//                                    IO.println("no nulo " + request.playerId());
                                     player.setTranslateX(request.x());
                                     player.setTranslateY(request.y());
+
                                 }
                             }
                             case DeletePlayer d -> Platform.runLater(() -> {
@@ -373,8 +354,8 @@ public class ClientServerSimpleGame {
         var playerFactory = new PlayerFactory(
                 playerId,
                 "RED",
-                random.nextDouble(200),
-                random.nextDouble(150)
+                random.nextDouble(400),
+                random.nextDouble(300)
         );
 
         var player = playerFactory.getPlayer();
@@ -385,7 +366,7 @@ public class ClientServerSimpleGame {
 
         gameNodes = Collections.synchronizedList(pane.getChildren());
 
-        pane.setPrefSize(225, 175);
+        pane.setPrefSize(500, 400);
         pane.setStyle("-fx-background-color: #123456");
 
         return pane;
@@ -430,8 +411,8 @@ public class ClientServerSimpleGame {
                                 var playerFactory = new PlayerFactory(
                                         id,
                                         "WHITE",
-                                        random.nextDouble(200),
-                                        random.nextDouble(150)
+                                        random.nextDouble(400),
+                                        random.nextDouble(300)
                                 );
 
                                 //io.println("new playerFactory " + id);
@@ -515,22 +496,8 @@ public class ClientServerSimpleGame {
                                             executor.execute(() -> {
                                                 var requestedPlayer = playerNodes.get(r.playerId());
 
+                                                translatePlayer(requestedPlayer, r.keys());
 //                                                //io.println("llegaron keys " + r.keys());
-                                                for (var k : r.keys()) {
-                                                    if (k == W) {
-                                                        requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() - 5);
-                                                        //io.println("W");
-                                                    } else if (k == A) {
-                                                        requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() - 5);
-                                                        //io.println("A");
-                                                    } else if (k == S) {
-                                                        requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() + 5);
-                                                        //io.println("S");
-                                                    } else if (k == D) {
-                                                        requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() + 5);
-                                                        //io.println("D");
-                                                    }
-                                                }
 
                                                 executor.execute(() -> {
                                                     var updatedPlayerInfo =
@@ -617,5 +584,23 @@ public class ClientServerSimpleGame {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void translatePlayer(Player requestedPlayer, KeyCode[] pressedKeys) {
+        for (var k : pressedKeys) {
+            if (k == KeyCode.W) {
+                requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() - 5);
+//                                                        IO.println("W");
+            } else if (k == KeyCode.A) {
+                requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() - 5);
+//                                                        IO.println("A");
+            } else if (k == KeyCode.S) {
+                requestedPlayer.setTranslateY(requestedPlayer.getTranslateY() + 5);
+//                                                        IO.println("S");
+            } else if (k == KeyCode.D) {
+                requestedPlayer.setTranslateX(requestedPlayer.getTranslateX() + 5);
+//                                                        IO.println("D");
+            }
+        }
     }
 }
