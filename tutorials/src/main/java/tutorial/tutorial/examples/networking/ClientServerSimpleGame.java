@@ -15,6 +15,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import tutorial.tutorial.examples.networking.events.*;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -182,7 +183,7 @@ public class ClientServerSimpleGame {
 
             translatePlayer(serverPlayer, keys);
 
-            var updateRequest = new Update(serverPlayer.getPlayerId(), serverPlayer.getTranslateX(), serverPlayer.getTranslateY());
+            var updateRequest = new TranslatePlayer(serverPlayer.getPlayerId(), serverPlayer.getTranslateX(), serverPlayer.getTranslateY());
 
             writers.forEach((playerId, outputStream) -> {
                 try {
@@ -205,7 +206,7 @@ public class ClientServerSimpleGame {
                         IO.println("Player id too high");
                     }
 
-                    out.writeObject(new UpdatePlayer(playerId, newKeys));
+                    out.writeObject(new PressedKeys(playerId, newKeys));
                     out.flush();
                 } catch (IOException ex) {
                     //io.println("Error sending keys to server");
@@ -297,7 +298,7 @@ public class ClientServerSimpleGame {
 
                                 playerId = p.playerFactory().getPlayerId();
                             }
-                            case Update request -> {
+                            case TranslatePlayer request -> {
                                 if (request.playerId() < 0 || playerNodes.get(request.playerId()) == null) {
                                     IO.println("index invalido " + request.playerId());
                                 } else {
@@ -492,7 +493,7 @@ public class ClientServerSimpleGame {
 //
 //                                    }
                                     switch (request) {
-                                        case UpdatePlayer r -> {
+                                        case PressedKeys r -> {
                                             executor.execute(() -> {
                                                 var requestedPlayer = playerNodes.get(r.playerId());
 
@@ -501,9 +502,9 @@ public class ClientServerSimpleGame {
 
                                                 executor.execute(() -> {
                                                     var updatedPlayerInfo =
-                                                            new Update(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
+                                                            new TranslatePlayer(r.playerId(), requestedPlayer.getTranslateX(), requestedPlayer.getTranslateY());
 
-                                                    if (r.playerId() < 0 || r.playerId() > 1000) {
+                                                    if (r.playerId() < 0) {
                                                         IO.println("2 Player id not correct");
                                                     }
 
