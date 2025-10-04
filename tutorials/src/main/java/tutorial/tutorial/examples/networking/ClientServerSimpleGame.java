@@ -186,12 +186,14 @@ public class ClientServerSimpleGame {
             var updateRequest = new TranslatePlayer(serverPlayer.getPlayerId(), serverPlayer.getTranslateX(), serverPlayer.getTranslateY());
 
             writers.forEach((playerId, outputStream) -> {
-                try {
-                    outputStream.writeObject(updateRequest);
-                    outputStream.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                executor.execute(() -> {
+                    try {
+                        outputStream.writeObject(updateRequest);
+                        outputStream.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             });
 
             return;
@@ -241,7 +243,7 @@ public class ClientServerSimpleGame {
     private void initClientSocket() {
         executor.execute(() -> {
             try {
-                clientSocket = new Socket("localhost", 12346);
+                clientSocket = new Socket("192.168.1.5", 12346);
 
                 clientClosingCallBacks.put((short) 1, () -> {
                     try {
@@ -577,7 +579,7 @@ public class ClientServerSimpleGame {
                                 throw new RuntimeException(ex);
                             }
 
-                            throw new RuntimeException(e);
+//                            throw new RuntimeException(e);
                         }
                     });
                 }
