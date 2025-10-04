@@ -300,18 +300,19 @@ public class ClientServerSimpleGame {
 
                                 playerId = p.playerFactory().getPlayerId();
                             }
-                            case TranslatePlayer request -> {
+                            case TranslatePlayer request -> executor.execute(() -> {
                                 if (request.playerId() < 0 || playerNodes.get(request.playerId()) == null) {
                                     IO.println("index invalido " + request.playerId());
                                 } else {
                                     final var player = playerNodes.get(request.playerId());
 
 //                                    IO.println("no nulo " + request.playerId());
-                                    player.setTranslateX(request.x());
-                                    player.setTranslateY(request.y());
-
+                                    Platform.runLater(() -> {
+                                        player.setTranslateX(request.x());
+                                        player.setTranslateY(request.y());
+                                    });
                                 }
-                            }
+                            });
                             case DeletePlayer d -> Platform.runLater(() -> {
                                 gameNodes.remove(playerNodes.get(d.id()));
                                 playerNodes.remove(d.id());
