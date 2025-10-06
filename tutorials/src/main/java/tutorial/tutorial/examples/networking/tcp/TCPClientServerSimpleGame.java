@@ -26,6 +26,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+// This class is using ServerSocket and Socket APIs which uses TCP under the hood
+// remember TCP is used when you need to guarantee packages will be delivered, so it
+// is reliable but is less performant than UDP, that is why we have an implementation using
+//
 public class ClientServerSimpleGame {
     private final List<Node> groupNodes;
     private List<Node> gameNodes;
