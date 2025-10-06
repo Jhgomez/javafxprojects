@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
@@ -12,6 +13,7 @@ import javafx.stage.Stage;
 import tutorial.tutorial.examples.flappybirdgame.FXBirdGame;
 import tutorial.tutorial.examples.gamemenus.GameMenus;
 import tutorial.tutorial.examples.geometrywars.WarsGame;
+import tutorial.tutorial.examples.networking.ClientServerSimpleGame;
 import tutorial.tutorial.examples.pacman.Pacman;
 import tutorial.tutorial.examples.platformgame.PlatformGame;
 import tutorial.tutorial.examples.vector.Vector;
@@ -40,6 +42,7 @@ public class TutorialApp extends Application {
         Button warGame = new Button("War Game");
         Button pacman = new Button("Pacman");
         Button gameMenus = new Button("Game Menus");
+        var gameWithNetwork = new Button("Game With Networking");
 
         Runnable runnable = stage::show;
 
@@ -133,6 +136,10 @@ public class TutorialApp extends Application {
             stage.hide();
         });
 
+        gameWithNetwork.setOnAction(e -> {
+            new ClientServerSimpleGame().displayScreen(runnable);
+        });
+
         VBox.setVgrow(_2DShapes, Priority.ALWAYS);
         _2DShapes.setMaxHeight(Double.MAX_VALUE);
 
@@ -155,14 +162,20 @@ public class TutorialApp extends Application {
                 birdGame,
                 warGame,
                 pacman,
-                gameMenus
+                gameMenus,
+                gameWithNetwork
         );
 
         root.setAlignment(Pos.CENTER);
 
         root.setPadding(new Insets(24, 80, 24, 80));
 
-        Scene scene = new Scene(root);
+        var scroll = new ScrollPane(root);
+        scroll.setPrefHeight(400);
+
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        Scene scene = new Scene(scroll);
         scene.setFill(Paint.valueOf("#fdbf6f"));
 
         stage.setTitle("Tutorials");
