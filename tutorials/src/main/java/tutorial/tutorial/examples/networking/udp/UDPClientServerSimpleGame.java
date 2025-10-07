@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
@@ -43,10 +44,15 @@ public class UDPClientServerSimpleGame {
     final Map<Short, DatagramPacket> writers = new ConcurrentHashMap<>();
     private final KeyCode[] keys = new KeyCode[4];
     private final AtomicInteger idCounter = new AtomicInteger(0);
+    private final AtomicInteger pooledCount = new AtomicInteger(0);
+    private final AtomicInteger createdInputsCount = new AtomicInteger(0);
     private short playerId = -1;
     private final InetAddress serverAddress = InetAddress.getByName("localhost");
     private final Queue<OutputSetUp> outputObjects = new ConcurrentLinkedQueue<>();
     private final Queue<InputSetUp> inputObjects = new ConcurrentLinkedQueue<>();
+
+    private OutputSetUp outputSetUp = null;
+    private InputSetUp inputSetUp = null;
 
     private DatagramSocket serverSocket;
     private DatagramSocket clientSocket;
@@ -127,7 +133,18 @@ public class UDPClientServerSimpleGame {
 
             if (transformations1.get(newVal) != null) {
                 Pane newNode = transformations1.get(newVal).apply(scene);
-                newNode.getChildren().add(slider);
+
+                var button = new Button("NOdes");
+
+                button.setLayoutX(170);
+                button.setLayoutY(10);
+
+                button.setOnAction(e -> {
+                    writers.forEach((playerId, writer) -> IO.println("Updating powerups timer for player " + playerId + " to " + writer.getPort()));
+                });
+
+                newNode.getChildren().addAll(slider, button);
+
                 groupNodes.add(newNode);
 
                 stage.setWidth(newNode.getPrefWidth());
@@ -216,12 +233,12 @@ public class UDPClientServerSimpleGame {
             writers.forEach((playerId, outputStream) -> {
                 executor.execute(() -> {
                     try {
-                        var outputObjects = getOutputObjects();
+                        var byteArrayOutputStream = new ByteArrayOutputStream();
+                        var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
 
-                        outputObjects.objectOutputStream().writeObject(updateRequest);
-                        outputObjects.objectOutputStream().flush();
+                        objectOutputStream.writeObject(updateRequest);
 
-                         var bytes = outputObjects.byteArrayOutputStream().toByteArray();
+                         var bytes = byteArrayOutputStream.toByteArray();
 
                          var datagram = new DatagramPacket(
                                  bytes,
@@ -249,12 +266,13 @@ public class UDPClientServerSimpleGame {
                         IO.println("Player id too high");
                     }
 
-                    var outputObjects = getOutputObjects();
+                    var byteArrayOutputStream = new ByteArrayOutputStream();
+                    var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
 
-                    outputObjects.objectOutputStream().writeObject(new PressedKeys(playerId, newKeys));
+                    objectOutputStream.writeObject(new PressedKeys(playerId, newKeys));
 //                    outputObjects.objectOutputStream().flush();
 
-                    var bytes =  outputObjects.byteArrayOutputStream().toByteArray();
+                    var bytes =  byteArrayOutputStream.toByteArray();
 
                     // Create a packet to send the data
                     DatagramPacket sendPacket = new DatagramPacket(
@@ -306,12 +324,12 @@ public class UDPClientServerSimpleGame {
 
                 clientClosingCallBacks.put((short) 1, clientSocket::close);
 
-                var outputObjects = getOutputObjects();
+                var arrayOutputStream = new ByteArrayOutputStream();
+                var objectOutputStream = new ObjectOutputStream(arrayOutputStream);
 
-                outputObjects.objectOutputStream().writeObject(new NewConnection());
-//                outputObjects.objectOutputStream().flush();
+                objectOutputStream.writeObject(new NewConnection());
 
-                var bytes = outputObjects.byteArrayOutputStream().toByteArray();
+                var bytes = arrayOutputStream.toByteArray();
 
                 var datagram = new DatagramPacket(
                         bytes,
@@ -330,13 +348,18 @@ public class UDPClientServerSimpleGame {
 
                     while (response != null) {
                         try {
-                            IO.println("Listening response from server");
+//                            IO.println("Listening response from server");
+                            var buffer = new byte[2048];
+                            var datagramPacket = new DatagramPacket(buffer, buffer.length);
 
+                            clientSocket.receive(datagramPacket);
 
-                            var inputObjects = getNextRequestInputObjects(clientSocket);
+                            var byteInputStream = new ByteArrayInputStream(datagramPacket.getData());
 
-                            response = inputObjects.objectInputStream().readObject();
-                            IO.println("received response from server");
+                            var objectInputStream = new ObjectInputStream(byteInputStream);
+
+                            response = objectInputStream.readObject();
+//                            IO.println("received response from server");
 
                             switch (response) {
                                 // this one has to be synchronous to avoid missing updates
@@ -368,11 +391,15 @@ public class UDPClientServerSimpleGame {
                                     gameNodes.remove(playerNodes.get(d.id()));
                                     playerNodes.remove(d.id());
                                 });
-                                default -> {} //io.println("Couldn't read response or cast was not successful, waiting for next message");
+                                default -> {
+                                } //io.println("Couldn't read response or cast was not successful, waiting for next message");
                             }
 
+//                            inputObjects.byteArrayInputStream().close();
+//                            inputObjects.objectInputStream().close();
+
 //                            inputObjects.packet().setData(new byte[2048]);
-                            this.inputObjects.add(inputObjects);
+//                            this.inputObjects.add(inputObjects);
                         } catch (IOException | ClassNotFoundException e) {
                             response = null;
                             clientSocket.close();
@@ -447,17 +474,22 @@ public class UDPClientServerSimpleGame {
                 //io.println("3 playerId " + id);
 
                 while (true) {
-                    IO.println("listening conn");
-                    var inputObjects = getNextRequestInputObjects(serverSocket);
-                    IO.println("Received conn " + inputObjects.packet().getAddress());
+                    var buffer = new byte[2048];
+                    var datagramPacket = new DatagramPacket(buffer, buffer.length);
+
+                    serverSocket.receive(datagramPacket);
+
+                    var byteInputStream = new ByteArrayInputStream(datagramPacket.getData());
+
+                    var objectInputStream = new ObjectInputStream(byteInputStream);
 
 //                    request = inputObjects.objectInputStream().readObject();
-                    request = inputObjects.objectInputStream().readObject();
+                    request = objectInputStream.readObject();;
 
                     switch (request) {
                         case NewConnection _ -> {
-                            IO.println("Received conn1 " + inputObjects.packet().getAddress());
-                            onNewConnection(inputObjects.packet());
+                            IO.println("server received new connection");
+                            onNewConnection(datagramPacket);
                         }
                         case PressedKeys r -> {
                             executor.execute(() -> {
@@ -477,11 +509,12 @@ public class UDPClientServerSimpleGame {
                                     writers.forEach((playerId, writer) -> {
                                         executor.execute(() -> {
                                             try {
-                                                var streams = getOutputObjects();
-                                                streams.objectOutputStream().writeObject(updatedPlayerInfo);
+                                                var byteArrayOutputStream = new ByteArrayOutputStream();
+                                                var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+                                                objectOutputStream.writeObject(updatedPlayerInfo);
 //                                                streams.objectOutputStream().flush();
 
-                                                var byteArray = streams.byteArrayOutputStream().toByteArray();
+                                                var byteArray = byteArrayOutputStream.toByteArray();
 //                                                streams.byteArrayOutputStream().flush();
 
                                                 DatagramPacket sendPacket = new DatagramPacket(
@@ -508,12 +541,13 @@ public class UDPClientServerSimpleGame {
 
                             writers.forEach((playerId, writer) -> {
                                 try {
-                                    var streams = getOutputObjects();
+                                    var byteArrayOutputStream = new ByteArrayOutputStream();
+                                    var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
 
-                                    streams.objectOutputStream().writeObject(deleteRequest);
+                                    objectOutputStream.writeObject(deleteRequest);
 //                                    streams.objectOutputStream().flush();
 
-                                    var byteArray = streams.byteArrayOutputStream().toByteArray();
+                                    var byteArray = byteArrayOutputStream.toByteArray();
 //                                    streams.byteArrayOutputStream().flush();
 
                                     var datagram = new DatagramPacket(
@@ -538,8 +572,11 @@ public class UDPClientServerSimpleGame {
                         default -> throw new IllegalStateException("Unexpected value: " + request);
                     }
 
+//                    inputObjects.byteArrayInputStream().close();
+//                    inputObjects.objectInputStream().close();
+
 //                    inputObjects.packet().setData(new byte[2048]);
-                    this.inputObjects.add(inputObjects);
+//                    this.inputObjects.add(inputObjects);
                 }
             } catch (IOException e) {
                 serverSocket.close();
@@ -551,29 +588,23 @@ public class UDPClientServerSimpleGame {
     }
 
     private void onNewConnection(DatagramPacket newConnectionPacket) throws IOException {
-        var streams = getOutputObjects();
-        IO.println("Received conn 3" + newConnectionPacket.getAddress());
-        // virtual thread for creating players
-        ScopedValue<DatagramPacket> CONNECTION = ScopedValue.newInstance();
 
-        ScopedValue.where(CONNECTION, newConnectionPacket).run(() -> {
-            CONNECTION.get();
-        });
+        // virtual thread for creating players
 
 //        executor.execute(() -> {
             //io.println("new playerFactory " + id);
 
-            IO.println("Sending all prev Players " + newConnectionPacket.getAddress());
             //sends current players to new player
             playerNodes.forEach((playerId, player) -> {
                 try {
-                    IO.println("Sending prev player");
-                    streams.objectOutputStream().writeObject(new AddPlayer(player.toFactory()));
-//                    streams.objectOutputStream().flush(); // might not need to do this
+                    var byteArrayOutputStream = new ByteArrayOutputStream();
+                    var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
 
-                    var sendBuffer = streams.byteArrayOutputStream().toByteArray();
-//                    streams.byteArrayOutputStream().flush(); // might not need to do this
+                    objectOutputStream.writeObject(new AddPlayer(player.toFactory()));
 
+                    var sendBuffer = byteArrayOutputStream.toByteArray();
+
+                    IO.println("Received conn 3" + newConnectionPacket.getAddress());
                     // Create a packet to send the data
                     DatagramPacket newPlayer = new DatagramPacket(
                             sendBuffer,
@@ -581,10 +612,10 @@ public class UDPClientServerSimpleGame {
                             newConnectionPacket.getAddress(),
                             newConnectionPacket.getPort()
                     );
+//                    IO.println("Received conn 4" + newConnectionPacket.getAddress());
 
                     // Send the packet
                     serverSocket.send(newPlayer);
-                    IO.println("prev player sent");
                 } catch (IOException ex) {
 //                    io.println("Error sending keys to server");
                     throw new RuntimeException(ex);
@@ -592,6 +623,8 @@ public class UDPClientServerSimpleGame {
 
 
             });
+
+//        IO.println("Received conn 5" + newConnectionPacket.getAddress());
 
             var id = (short) idCounter.getAndIncrement();
             var playerFactory = new PlayerFactory(
@@ -601,37 +634,48 @@ public class UDPClientServerSimpleGame {
                     random.nextDouble(300)
             );
 
-        DatagramPacket connection = new DatagramPacket(new byte[1024], 1024, newConnectionPacket.getAddress(),
+        DatagramPacket connection = new DatagramPacket(new byte[2048], 2048, newConnectionPacket.getAddress(),
                 newConnectionPacket.getPort());
 
+//        IO.println("Received conn 6");
         writers.put(id, connection);
             // concurrently send new playerFactory individually to all connected clients
-            executor.execute(() -> {
+//            executor.execute(() -> {
+//        IO.println("Received conn 7" + newConnectionPacket.getAddress());
                 var request = new AddPlayer(playerFactory);
 
-                writers.forEach((playerId, datagramPacket) -> {
-                    try {
-                        if (playerId == id) {
-                            streams.objectOutputStream().writeObject(new SetUpNewPlayer(playerFactory));
-                        } else {
-                            streams.objectOutputStream().writeObject(request);
+//                for (var i = 0; i < 2; i++) {
+                    writers.forEach((playerId, datagramPacket) -> {
+                        try {
+                            var byteArrayOutputStream = new ByteArrayOutputStream();
+                            var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+
+                            if (playerId == id) {
+                                objectOutputStream.writeObject(new SetUpNewPlayer(playerFactory));
+                            } else {
+                                objectOutputStream.writeObject(request);
+                            }
+
+                            var sendBuffer = byteArrayOutputStream.toByteArray();
+
+//                        IO.println("Received conn 8" + datagramPacket.getAddress());
+                            DatagramPacket sendPacket = new DatagramPacket(
+                                    sendBuffer,
+                                    sendBuffer.length,
+                                    datagramPacket.getAddress(),
+                                    datagramPacket.getPort()
+                            );
+
+//                        IO.println("Received conn 9" + datagramPacket.getAddress());
+
+                            serverSocket.send(sendPacket);
+                            IO.println("Received conn 10" + datagramPacket.getAddress());
+                        } catch (IOException e) {
+                            IO.println("Error sending new playerFactory " + id + " to playerFactory " + playerId);
                         }
-
-                        var sendBuffer = streams.byteArrayOutputStream().toByteArray();
-
-                        DatagramPacket sendPacket = new DatagramPacket(
-                                sendBuffer,
-                                sendBuffer.length,
-                                datagramPacket.getAddress(),
-                                datagramPacket.getPort()
-                        );
-
-                        serverSocket.send(sendPacket);
-                    } catch (IOException e) {
-                        IO.println("Error sending new playerFactory " + id + " to playerFactory " + playerId);
-                    }
-                });
-            });
+                    });
+//                }
+//            });
 
             // add new playerFactory visually in server
             Platform.runLater(() -> {
@@ -642,33 +686,33 @@ public class UDPClientServerSimpleGame {
                 //io.println("added playerFactory to game nodes in parent " + id);
             });
 
-            outputObjects.add(streams);
+//            outputObjects.add(streams);
 //        });
     }
 
     private OutputSetUp getOutputObjects() {
-        var pair = outputObjects.poll();
+//        var pair = outputObjects.poll();
 
-        if (pair == null) {
+        if (outputSetUp == null) {
             try {
                 var byteArrayOutputStream = new ByteArrayOutputStream();
                 var objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
 
-                pair = new OutputSetUp(byteArrayOutputStream, objectOutputStream);
-                outputObjects.add(pair);
+                outputSetUp = new OutputSetUp(byteArrayOutputStream, objectOutputStream);
+//                outputObjects.add(pair);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        return pair;
+        return outputSetUp;
     }
 
     private InputSetUp getNextRequestInputObjects(DatagramSocket socket) {
-        var objects = inputObjects.poll();
+//        var objects = inputObjects.poll();
 
         try {
-            if (objects == null) {
+            if (inputSetUp == null) {
                 var buffer = new byte[2048];
                 var datagramPacket = new DatagramPacket(buffer, buffer.length);
 
@@ -682,21 +726,17 @@ public class UDPClientServerSimpleGame {
 
 
 
-                objects = new InputSetUp(datagramPacket, byteInputStream, objectInputStream);
+                inputSetUp = new InputSetUp(datagramPacket, byteInputStream, objectInputStream);
 //                objects.packet().setData(new byte[256]);
-                inputObjects.add(objects);
-            } else {
-//                objects.packet().setData(new byte[1024]);
-
-                socket.receive(objects.packet());
-
-
+//                inputObjects.add(objects);
             }
+
+            return inputSetUp;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        return objects;
+//        return objects;
     }
 
     private void translatePlayer(Player requestedPlayer, KeyCode[] pressedKeys) {
