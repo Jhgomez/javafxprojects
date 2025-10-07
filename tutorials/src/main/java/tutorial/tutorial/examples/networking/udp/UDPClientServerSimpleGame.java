@@ -191,6 +191,28 @@ public class UDPClientServerSimpleGame {
         });
 
         stage.setOnCloseRequest(e -> {
+            if (!isServer) {
+                try {
+                    var arrayOutputStream = new ByteArrayOutputStream();
+                    var objectOutputStream = new ObjectOutputStream(arrayOutputStream);
+
+                    objectOutputStream.writeObject(new DropClient(playerId));
+
+                    var bytes = arrayOutputStream.toByteArray();
+
+                    var datagram = new DatagramPacket(
+                            bytes,
+                            bytes.length,
+                            serverAddress,
+                            SERVER_PORT
+                    );
+
+                    clientSocket.send(datagram);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+
             clientClosingCallBacks.forEach((key, value) -> {
                 //io.println("closing client socket 100");
                 value.run();
@@ -204,7 +226,6 @@ public class UDPClientServerSimpleGame {
                 clientSocket.close();
             }
 
-            executor.close();
 
             // closing executor waits until all task have finished, which is a good way to ensure
             // all resources are cleared(means all sockets are closed)
@@ -406,10 +427,7 @@ public class UDPClientServerSimpleGame {
                             IO.println("Client closed with error");
                         }
                     }
-
-
-                    clientSocket.close();
-                    IO.println("Client closed without error");
+                    IO.println("Client Socket listener stoped without error");
                 });
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -580,7 +598,7 @@ public class UDPClientServerSimpleGame {
                 }
             } catch (IOException e) {
                 serverSocket.close();
-                throw new RuntimeException(e);
+                IO.println("Server stopped with error");
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
